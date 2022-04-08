@@ -1,0 +1,13 @@
+name = "DFNExperiments"
+uuid = "3a0abec3-6923-4dbb-8c3f-2db12d5cc016"
+authors = ["Zoe McCarthy <zoemccarthy12@gmail.com> and contributors"]
+version = "0.1.0"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+julia = "1"
+
+[targets]
+test = ["Test"]
