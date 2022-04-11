@@ -3,11 +3,19 @@ uuid = "3a0abec3-6923-4dbb-8c3f-2db12d5cc016"
 authors = ["Zoe McCarthy <zoemccarthy12@gmail.com> and contributors"]
 version = "0.1.0"
 
-[extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+[deps]
+DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
+NeuralPDE = "315f7962-48a3-4962-8226-d0f33b1235f0"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [compat]
 julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Test"]
