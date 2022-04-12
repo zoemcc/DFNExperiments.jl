@@ -1,9 +1,18 @@
 module DFNExperiments
 
-
 using NeuralPDE, ModelingToolkit, Symbolics, DomainSets
 using JSON
 using PyCall
+
+abstract type AbstractPyBaMMModel end
+
+pybamm_func_str(::AbstractPyBaMMModel) = throw("Not implemented")
+
+struct SPMModel <: AbstractPyBaMMModel
+end
+
+pybamm_func_str(spm::SPMModel) = "spm"
+
 
 ty(x) = typeof(x)
 fn(x) = fieldnames(x)
@@ -15,15 +24,16 @@ function __init__()
     initialize_pybamm_funcs()
 end
 
-function generate_sim_model(model_str; current_input=false, model_filename=nothing, sim_filename=nothing)
+function generate_sim_model(model::M; current_input=false, output_dir=nothing) where {M <: AbstractPyBaMMModel}
+    model_str = pybamm_func_str(model)
     current_input_str = current_input ? "True" : "False" 
     sim, mtk_str, variables = py"solve_plot_generate(*$$(model_str)(), current_input=$$(current_input_str))"
 
-    if typeof(model_filename) <: AbstractString
-        model_dir, _ = splitdir(model_filename)
-        if !isdir(model_dir)
-            mkpath(model_dir)
+    if typeof(output_dir) <: AbstractString
+        if !isdir(output_dir)
+            mkpath(output_dir)
         end
+        model_filename = joinpath(output_dir, "model.jl")
     else
         model_filename = Base.tempname()
     end
@@ -36,57 +46,39 @@ function generate_sim_model(model_str; current_input=false, model_filename=nothi
     sol_data_json = sim.solution.save_data(variables=variables, to_format="json")
     sol_data = JSON.parse(sol_data_json)
 
-    iv_names = [var.val.name for var in pde_system.ivs]
-    dv_names = [var.val.f.name for var in pde_system.dvs]
+    iv_names = nameof.(pde_system.ivs)
+    dv_names = (nameof ∘ operation ∘ Symbolics.value).(pde_system.dvs)
 
-    ivs_sim = Vector{Float64}[]
-    for iv_name in iv_names
-        full_name = independent_variables_to_pybamm_names[iv_name]
-        if haskey(sol_data, full_name)
-            data = sol_data[full_name]
-        else
-            data = sol_data[string(iv_name)]
-        end 
-        @show length(data)
-        first_col = [datum[1] for datum in data]
-        push!(ivs_sim, first_col)
+    get_one_of_two(data_dict, key1, key2) = haskey(data_dict, key1) ? data_dict[key1] : data_dict[key2]
+
+    ivs_sim::Vector{Vector{Float64}} = map(iv_names) do iv_name 
+        data = get_one_of_two(sol_data, independent_variables_to_pybamm_names[iv_name], string(iv_name))
+        first_cols = first.(data)
     end
 
-    dvs_sim = Matrix{Float64}[]
-    for dv_name in dv_names
-        full_name = dependent_variables_to_pybamm_names[dv_name]
-        if haskey(sol_data, full_name)
-            data = sol_data[full_name]
-        else
-            data = sol_data[string(iv_name)]
-        end 
-        @show length(data)
-        
+    dvs_sim::Vector{Matrix{Float64}} = map(dv_names) do dv_name
+        data = get_one_of_two(sol_data, dependent_variables_to_pybamm_names[dv_name], string(dv_name))
         data_mat = reduce(hcat, data)
-        @show size(data_mat)
-        push!(dvs_sim, data_mat)
+        # make sure time is last axis, this needs the check so we don't flip data that only depends on time
+        if size(data_mat, 1) != 1
+            data_mat = collect(data_mat')
+        end
+        data_mat
     end
 
     sim_data = Dict(
-        :ivs => [
-            Dict(
-                :name => iv_name,
-                :data => data
-            ) for (iv_name, data) in zip(iv_names, ivs_sim)
-        ],
-        :dvs => [
-            Dict(
-                :name => dv_name,
-                :data => data
-            ) for (dv_name, data) in zip(dv_names, dvs_sim)
-        ]
+        :ivs => Dict(
+            :names => iv_names,
+            :data => ivs_sim
+        ),
+        :dvs => Dict(
+            :names => dv_names,
+            :data => dvs_sim
+        ) 
     )
 
-    if typeof(sim_filename) <: AbstractString
-        sim_dir, _ = splitdir(sim_filename)
-        if !isdir(sim_dir)
-            mkpath(sim_dir)
-        end
+    if typeof(output_dir) <: AbstractString
+        sim_filename = joinpath(output_dir, "sim.json")
         open(sim_filename, "w") do f
             JSON.print(f, sim_data)
         end
@@ -95,27 +87,32 @@ function generate_sim_model(model_str; current_input=false, model_filename=nothi
     (sim_data=sim_data, pde_system=pde_system)
 end
 
-function read_sim_data(sim_filename)
+function read_sim_data(output_dir::AbstractString)
+    # either the folder that contains the file or the file itself is acceptable input
+    if isfile(output_dir)
+        sim_filename = output_dir
+    elseif isdir(output_dir)
+        sim_filename = joinpath(output_dir, "sim.json")
+    else
+        throw("Invalid path.  Path must be either the simulation json file or the directory that contains the sim.json file.")
+    end
     sim_data_strs = JSON.parse(open(f->read(f, String), sim_filename, "r"))
     sim_data = Dict(
-        :ivs => [
-            Dict(
-                :name => Symbol(iv["name"]),
-                :data => Float64.(iv["data"])
-            ) for iv in sim_data_strs["ivs"]
-        ],
-        :dvs => [
-            Dict(
-                :name => Symbol(dv["name"]),
-                :data => reduce((v1, v2) -> hcat(Float64.(v1), Float64.(v2)), dv["data"])
-            ) for dv in sim_data_strs["dvs"]
-        ]
+        :ivs => Dict(
+            :names => Symbol.(sim_data_strs["ivs"]["names"]),
+            :data => map(x->Float64.(x), (sim_data_strs["ivs"]["data"]))
+        ),
+        :dvs => Dict(
+            :name => Symbol(sim_data_strs["dvs"]["names"]),
+            :data => reduce.((v1, v2) -> hcat(Float64.(v1), Float64.(v2)), sim_data_strs["dvs"]["data"])
+        )
     )
 
 end
 
 export ty, fn, fnty
-export generate_sim_model, read_sim_data
+export generate_sim_model, read_sim_data, pybamm_func_str
+export AbstractPyBaMMModel, SPMModel
 
 
 end

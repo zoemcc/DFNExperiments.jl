@@ -8,12 +8,12 @@ using JSON
 pybamm = pyimport("pybamm")
 
 current_input = false
-model_str = "spm"
-model_filename = abspath(joinpath(@__DIR__, "..", "models", "$(model_str)", "model.jl"))
-sim_filename = abspath(joinpath(@__DIR__, "..", "models", "$(model_str)", "sim.json"))
-sim_data, pde_system = generate_sim_model(model_str; current_input=current_input, model_filename=model_filename, sim_filename=sim_filename)
+model = SPMModel()
+models_dir = abspath(joinpath(@__DIR__, "..", "models"))
+output_dir = joinpath(models_dir, "$(pybamm_func_str(model))")
+sim_data, pde_system = generate_sim_model(model; current_input=current_input, output_dir=output_dir)
 
-sim_json_data = DFNExperiments.read_sim_data(sim_filename)
+sim_json_data = read_sim_data(output_dir)
 
 nothing
 
