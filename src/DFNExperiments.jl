@@ -97,13 +97,13 @@ function read_sim_data(output_dir::AbstractString)
         throw("Invalid path.  Path must be either the simulation json file or the directory that contains the sim.json file.")
     end
     sim_data_strs = JSON.parse(open(f->read(f, String), sim_filename, "r"))
-    sim_data = Dict(
-        :ivs => Dict(
+    sim_data = Dict{Symbol, Union{Dict{Symbol, Union{Vector{Symbol}, Vector{Vector{Float64}}}}, Dict{Symbol, Union{Vector{Symbol}, Vector{Matrix{Float64}}}}}}(
+        :ivs => Dict{Symbol, Union{Vector{Symbol}, Vector{Vector{Float64}}}}(
             :names => Symbol.(sim_data_strs["ivs"]["names"]),
             :data => map(x->Float64.(x), (sim_data_strs["ivs"]["data"]))
         ),
-        :dvs => Dict(
-            :name => Symbol(sim_data_strs["dvs"]["names"]),
+        :dvs => Dict{Symbol, Union{Vector{Symbol}, Vector{Matrix{Float64}}}}(
+            :name => Symbol.(sim_data_strs["dvs"]["names"]),
             :data => reduce.((v1, v2) -> hcat(Float64.(v1), Float64.(v2)), sim_data_strs["dvs"]["data"])
         )
     )
