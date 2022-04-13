@@ -22,6 +22,16 @@ export NEURALPDE_LOCATION="/path/to/neuralpde_repo"
 export ANACONDA_LOCATION="/path/to/anaconda3"
 ```
 
+use the following command to create and activate the conda python env:
+
+```sh
+conda create -n pybamm_dev python=3.7
+```
+
+```sh
+conda activate pybamm_dev
+```
+
 and then run:
 
 ```sh

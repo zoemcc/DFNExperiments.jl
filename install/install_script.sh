@@ -1,5 +1,4 @@
-conda create -n pybamm_dev python=3.7
-conda activate pybamm_dev
+#!/bin/bash
 cd $PYBAMM_LOCATION
 pip install -e .
 cd $DFNEXPERIMENTS_LOCATION
