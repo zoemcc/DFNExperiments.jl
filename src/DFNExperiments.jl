@@ -1,6 +1,7 @@
 module DFNExperiments
 
 using NeuralPDE, ModelingToolkit, Symbolics, DomainSets
+using LabelledArrays
 using JSON
 using PyCall
 
@@ -69,44 +70,48 @@ function generate_sim_model(model::M; current_input=false, output_dir=nothing) w
     sim_data = Dict(
         :ivs => Dict(
             :names => iv_names,
-            :data => ivs_sim
+            :data => ivs_sim,
         ),
         :dvs => Dict(
             :names => dv_names,
-            :data => dvs_sim
+            :deps => [[:t], [:r_n, :t], [:r_p, :t]], # TODO: change this to work for more than just SPM
+            :data => dvs_sim,
         ) 
     )
 
     if typeof(output_dir) <: AbstractString
         sim_filename = joinpath(output_dir, "sim.json")
-        open(sim_filename, "w") do f
-            JSON.print(f, sim_data)
-        end
+    else
+        sim_filename = Base.tempname()
     end
 
-    (sim_data=sim_data, pde_system=pde_system)
+    open(sim_filename, "w") do f
+        JSON.print(f, sim_data)
+    end
+    sim_data_nt = read_sim_data(sim_filename)
+
+    (sim_data=sim_data_nt, pde_system=pde_system)
 end
 
-function read_sim_data(output_dir::AbstractString)
+function read_sim_data(output_dir_or_file::AbstractString)
     # either the folder that contains the file or the file itself is acceptable input
-    if isfile(output_dir)
-        sim_filename = output_dir
-    elseif isdir(output_dir)
-        sim_filename = joinpath(output_dir, "sim.json")
+    if isfile(output_dir_or_file)
+        sim_filename = output_dir_or_file
+    elseif isdir(output_dir_or_file)
+        sim_filename = joinpath(output_dir_or_file, "sim.json")
     else
         throw("Invalid path.  Path must be either the simulation json file or the directory that contains the sim.json file.")
     end
     sim_data_strs = JSON.parse(open(f->read(f, String), sim_filename, "r"))
-    sim_data = Dict{Symbol, Union{Dict{Symbol, Union{Vector{Symbol}, Vector{Vector{Float64}}}}, Dict{Symbol, Union{Vector{Symbol}, Vector{Matrix{Float64}}}}}}(
-        :ivs => Dict{Symbol, Union{Vector{Symbol}, Vector{Vector{Float64}}}}(
-            :names => Symbol.(sim_data_strs["ivs"]["names"]),
-            :data => map(x->Float64.(x), (sim_data_strs["ivs"]["data"]))
-        ),
-        :dvs => Dict{Symbol, Union{Vector{Symbol}, Vector{Matrix{Float64}}}}(
-            :name => Symbol.(sim_data_strs["dvs"]["names"]),
-            :data => reduce.((v1, v2) -> hcat(Float64.(v1), Float64.(v2)), sim_data_strs["dvs"]["data"])
-        )
-    )
+    iv_syms = tuple(Symbol.(sim_data_strs["ivs"]["names"])...)
+    iv_data = tuple(map(x->Float64.(x), (sim_data_strs["ivs"]["data"]))...)
+    iv_nt = NamedTuple{iv_syms}(iv_data)
+    dv_syms = tuple(Symbol.(sim_data_strs["dvs"]["names"])...)
+    dv_deps = tuple(map(x->NamedTuple{tuple(Symbol.(x)...)}(tuple((1:length(x))...)), sim_data_strs["dvs"]["deps"])...)
+    dv_data = tuple(reduce.((v1, v2) -> hcat(Float64.(v1), Float64.(v2)), sim_data_strs["dvs"]["data"])...)
+    dv_data_nt = NamedTuple{dv_syms}(dv_data)
+    dv_deps_nt = NamedTuple{dv_syms}(dv_deps)
+    sim_data = (ivs = iv_nt, dvs = dv_data_nt, dv_deps = dv_deps_nt)
 
 end
 
