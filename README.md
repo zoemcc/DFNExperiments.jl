@@ -35,7 +35,7 @@ conda activate pybamm_dev
 and then run:
 
 ```sh
-sh $DFNEXPERIMENTS_LOCATION/install/install_script.sh
+bash $DFNEXPERIMENTS_LOCATION/install/install_script.sh
 ```
 
 and hopefully everything should get setup. 
