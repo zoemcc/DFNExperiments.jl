@@ -1,9 +1,14 @@
 module DFNExperiments
 
+using DiffEqFlux, Flux
 using NeuralPDE, ModelingToolkit, Symbolics, DomainSets
 using LabelledArrays
 using JSON
 using PyCall
+
+abstract type AbstractApplyFuncType end
+
+include("multi_dimensional_function.jl")
 
 abstract type AbstractPyBaMMModel end
 
@@ -15,7 +20,6 @@ end
 pybamm_func_str(spm::SPMModel) = "spm"
 
 
-include("multi_dimensional_function.jl")
 include("generate_py.jl")
 
 function __init__()
@@ -116,6 +120,8 @@ end
 export ty, fn, fnty
 export generate_sim_model, read_sim_data, pybamm_func_str
 export AbstractPyBaMMModel, SPMModel
+export AbstractApplyFuncType, ParameterizedMatrixApplyFuncType, VectorOfParameterizedMDFApplyFuncType
+export MultiDimensionalFunction, cartesian_product
 
 
 end
