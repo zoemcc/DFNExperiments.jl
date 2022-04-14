@@ -113,7 +113,7 @@ end
 
     pybamm_plots = [(name="q_pybamm", image=q_pybamm), (name="csn_pybamm", image=csn_pybamm), (name="csp_pybamm", image=csp_pybamm)]
 
-    has_given_pybamm_plots = [false]
+    have_given_pybamm_plots = [false]
 
     eval_network_at_sim_data = eval_network_at_sim_data_func()
 
@@ -134,8 +134,8 @@ end
         eval_compare_plots = [(name="q_nn", image=q_nn), (name="q_error", image=q_error),
                               (name="csn_nn", image=csn_nn), (name="csn_error", image=csn_error),
                               (name="csp_nn", image=csp_nn), (name="csp_error", image=csp_error)]
-        if !(has_given_pybamm_plots[1])
-            has_given_pybamm_plots[1] = true
+        if !(have_given_pybamm_plots[1])
+            have_given_pybamm_plots[1] = true
             vcat(pybamm_plots, eval_compare_plots)
         else
             eval_compare_plots
