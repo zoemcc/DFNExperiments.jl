@@ -88,26 +88,28 @@ func_sliced = eval_func_slice(sol_func2, domains, slice_vars, num_points_per_dim
 
 end
 
-@generated function (f::MultiDimensionalFunction{Func, MatrixApplyFuncType})(x::Union{<:Real, AbstractVector{<:Real}}...; flat=nothing) where {Func}
+@generated function (f::MultiDimensionalFunction{Func, MatrixApplyFuncType})(x::Union{<:Real, AbstractVector{<:Real}}...; flat=Val{false}) where {Func}
     quote
         # need to make a 2D array with the cartesian product of all the broadcasted 
         # and then apply the function to the point array
         # and reshape into the correct shape if flat is nothing
-        if flat isa Nothing
-            point_array, resize_info = cartesian_product(x...; flat=true, resize_info=true, debug=nothing) 
+        if flat == Val{false}
+            point_array, resize_info = cartesian_product(x...; flat=Val{true}, resize_info=Val{true}, debug=Val{false}) 
             transformed_array = f.f(point_array)
             reshaped_transformed_array = reshape(transformed_array, :, resize_info...)
             return reshaped_transformed_array
-        else
-            point_array = cartesian_product(x...; flat=true, resize_info=nothing, debug=nothing) 
+        elseif flat == Val{true}
+            point_array = cartesian_product(x...; flat=Val{true}, resize_info=Val{false}, debug=Val{false}) 
             transformed_array = f.f(point_array)
             return transformed_array
+        else
+            throw("Flat must be either Val{false} or Val{true}")
         end
     end
 end
 
 
-@generated function cartesian_product(x::Union{<:Real, AbstractVector{<:Real}}...; flat=nothing, debug=nothing, resize_info=nothing) 
+@generated function cartesian_product(x::Union{<:Real, AbstractVector{<:Real}}...; flat=Val{false}, debug=Val{false}, resize_info=Val{false}) 
     broadcast_dims = map(x_i->x_i <: AbstractVector, x)
     broadcast_indices = Set(map(first, filter(i_b->i_b[2], collect(enumerate(broadcast_dims)))))
     N = length(x)
@@ -119,7 +121,7 @@ end
         num_points = prod(broadcast_lengths)
         iter_indices = CartesianIndices(tuple(broadcast_lengths...))
 
-        if flat isa Nothing 
+        if flat == Val{false} 
             point_array = Array{$promotion_type, ($N + 1)}(undef, $N, broadcast_lengths...) # TODO: make the AbstractArray type be more general
             for (i, index) in enumerate(iter_indices)
                 for j in 1:$N
@@ -130,7 +132,7 @@ end
                     end
                 end
             end
-        else
+        elseif flat == Val{true}
             point_array = Array{$promotion_type, 2}(undef, $N, num_points) # TODO: make the AbstractArray type be more general
             for (i, index) in enumerate(iter_indices)
                 for j in 1:$N
@@ -141,17 +143,23 @@ end
                     end
                 end
             end
+        else
+            throw("Flat must be either Val{false} or Val{true}")
         end
 
-        if debug isa Nothing
-            if resize_info isa Nothing
+        if debug == Val{false}
+            if resize_info == Val{false}
                 return point_array
-            else
+            elseif resize_info == Val{true}
                 return (point_array=point_array, resize_shape=broadcast_lengths)
+            else
+                throw("resize_info must be either Val{false} or Val{true}")
             end
-        else
+        elseif debug == Val{true}
             return (N=$N, broadcast_dims=$(broadcast_dims), broadcast_indices=$(broadcast_indices), broadcast_lengths=broadcast_lengths, 
                 num_points=num_points, point_array=point_array, shape=size(point_array), iter_indices=iter_indices)
+        else
+            throw("Debug must be either Val{false} or Val{true}")
         end
     end
 
@@ -192,7 +200,7 @@ x1i = 0.1
 x2s = 0:0.2:1
 x2i = 0.4
 ys = 0:0.1:0.2
-da = mdf(ys, ys; flat=true)
+da = mdf(ys, ys; flat=Val{false})
 grids = cartesian_product(x1s, x2i, ys; flat=nothing)
 grids = cartesian_product(x1s, x2i, ys; flat=true)
 grids = cartesian_product(ys, ys; flat=true)
