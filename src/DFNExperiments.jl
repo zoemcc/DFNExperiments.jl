@@ -15,10 +15,7 @@ end
 pybamm_func_str(spm::SPMModel) = "spm"
 
 
-ty(x) = typeof(x)
-fn(x) = fieldnames(x)
-fnty = fn ∘ ty
-
+include("multi_dimensional_function.jl")
 include("generate_py.jl")
 
 function __init__()

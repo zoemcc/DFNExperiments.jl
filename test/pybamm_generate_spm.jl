@@ -2,7 +2,7 @@
 #using Pkg
 #Pkg.build("PyCall")
 using Distributed
-addprocs(20)
+#addprocs(20)
 @everywhere begin 
     using Pkg
     Pkg.activate(abspath(joinpath(@__DIR__, "..")))
@@ -29,16 +29,16 @@ Random.seed!(seed)
 @everywhere model = SPMModel()
 @everywhere models_dir = abspath(joinpath(@__DIR__, "..", "models"))
 @everywhere output_dir = joinpath(models_dir, "$(pybamm_func_str(model))")
-regenerate_sim = true
+regenerate_sim = false
 if regenerate_sim
     pybamm = pyimport("pybamm")
     current_input = false
     sim_data, pde_system = generate_sim_model(model; current_input=current_input, output_dir=output_dir)
 else 
     include(joinpath(output_dir, "model.jl"))
+    sim_data = read_sim_data(output_dir)
 end
 
-sim_data = read_sim_data(output_dir)
 @everywhere sim_data = $sim_data
 @everywhere pde_system = $pde_system
 
