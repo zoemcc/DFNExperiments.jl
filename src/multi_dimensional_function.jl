@@ -102,7 +102,7 @@ end
 
 # Neural network
 
-@generated function (f::MultiDimensionalFunction{Func, VectorOfParameterizedMDFApplyFuncType})(θ, x::Union{<:Real, AbstractVector{<:Real}}...; flat=Val{false}) where {Func}
+@generated function (f::MultiDimensionalFunction{Func, VectorOfParameterizedMDFApplyFuncType})(θ, x::Union{<:Real, AbstractVector{<:Real}}...; flat=Val{false}, collapse_zero_first_dim=true) where {Func}
     quote
         @assert length(x) == length(f.ivs) # assuming uniform local indexing
         num_dvs = length(f.dvs)
@@ -113,13 +113,13 @@ end
             # slice out the portion of θ that is appropriate and then call the sub MDF with that slice on the appropriate data
             x_i = x[collect(ivs_i)]
             param_indices_i = param_indices[i]
-            f_evals[i] = f.f[i]((@view θ[param_indices_i]), x_i...; flat=flat)
+            f_evals[i] = f.f[i]((@view θ[param_indices_i]), x_i...; flat=flat, collapse_zero_first_dim=collapse_zero_first_dim)
         end
         return f_evals
     end
 end
 
-@generated function (f::MultiDimensionalFunction{Func, ParameterizedMatrixApplyFuncType})(θ, x::Union{<:Real, AbstractVector{<:Real}}...; flat=Val{false}) where {Func}
+@generated function (f::MultiDimensionalFunction{Func, ParameterizedMatrixApplyFuncType})(θ, x::Union{<:Real, AbstractVector{<:Real}}...; flat=Val{false}, collapse_zero_first_dim=true) where {Func}
     quote
         # need to make a 2D array with the cartesian product of all the broadcasted 
         # and then apply the function to the point array
@@ -127,7 +127,11 @@ end
         if flat == Val{false}
             point_array, resize_info = cartesian_product(x...; flat=Val{true}, resize_info=Val{true}, debug=Val{false}) 
             transformed_array = f.f(point_array, θ)
-            reshaped_transformed_array = reshape(transformed_array, :, resize_info...)
+            if collapse_zero_first_dim && length(f.dvs) == 1
+                reshaped_transformed_array = reshape(transformed_array, resize_info...)
+            else
+                reshaped_transformed_array = reshape(transformed_array, :, resize_info...)
+            end
             return reshaped_transformed_array
         elseif flat == Val{true}
             point_array = cartesian_product(x...; flat=Val{true}, resize_info=Val{false}, debug=Val{false}) 
