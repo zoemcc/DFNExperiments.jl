@@ -89,10 +89,12 @@ struct MultiDimensionalFunction{Func, FType <: AbstractApplyFuncType, Extra, IVs
             end
         end
 
-        ivs_nt = NamedTuple{ivs}(1:length(ivs))
-        dvs_nt = NamedTuple{dvs}(1:length(dvs))
-        dv_deps_tup = tuple(map(i->ivs_nt[dv_deps[i]], 1:length(dvs))...)
-        dv_deps_nt = NamedTuple{dvs}(dv_deps_tup)
+        ivs_tup = ivs isa Tuple ? ivs : tuple(ivs...)
+        dvs_tup = dvs isa Tuple ? dvs : tuple(dvs...)
+        ivs_nt = NamedTuple{ivs_tup}(1:length(ivs))
+        dvs_nt = NamedTuple{dvs_tup}(1:length(dvs))
+        dv_deps_new = map(dv_dep->ivs_nt[dv_dep], dv_deps)
+        dv_deps_nt = NamedTuple{dvs_tup}(dv_deps_new)
 
         MultiDimensionalFunction(f, ftype, ivs_nt, dvs_nt, dv_deps_nt)
     end
