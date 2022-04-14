@@ -18,38 +18,64 @@ abstract type AbstractApplyFuncType end
 struct ParameterizedMatrixApplyFuncType <: AbstractApplyFuncType end
 struct VectorOfParameterizedMDFApplyFuncType <: AbstractApplyFuncType end
 
-struct MultiDimensionalFunction{Func, FType <: AbstractApplyFuncType, Extra, IVsNum, DVsNum, DVDepsTuple} 
+struct MultiDimensionalFunction{Func, FType <: AbstractApplyFuncType, Extra, IVsNT <: NamedTuple, DVsNT <: NamedTuple, DVDepsNT <: NamedTuple} 
     f::Func
     ftype::FType
     extra_data::Extra
-    ivs::NTuple{IVsNum, Symbol}
-    dvs::NTuple{DVsNum, Symbol}
-    dv_deps::DVDepsTuple 
+    ivs::IVsNT # NT of IV_Symbol -> IV_LocalIndex
+    dvs::DVsNT # NT of DV_Symbol -> DV_LocalIndex
+    dv_deps::DVDepsNT # NT of DV_Symbol -> (NT of IV_Symbol -> IV_LocalIndex)
 
-    function MultiDimensionalFunction(f, ftype::FType, ivs::NTuple{IVsNum, Symbol}, dvs::NTuple{DVsNum, Symbol}, dv_deps::Tuple) where
-        {FType <: AbstractApplyFuncType, IVsNum, DVsNum}
+    function MultiDimensionalFunction(f, ftype::FType, ivs::IVsNT, dvs::DVsNT, dv_deps::DVDepsNT) where 
+        {FType <: AbstractApplyFuncType, IVsNT <: NamedTuple, DVsNT <: NamedTuple, DVDepsNT <: NamedTuple}
 
-        @assert length(dv_deps) == DVsNum
-        for dv_dep in dv_deps
-            @assert dv_dep isa Tuple
-            @assert length(dv_dep) <= IVsNum
-            for iv in dv_dep
-                @assert iv isa Symbol
+        fntyivs = keys(ivs)
+        num_ivs = length(ivs)
+        for i in 1:num_ivs
+            @assert ivs[i] isa Int
+            @assert ivs[i] == i
+        end
+
+        fntydvs = keys(dvs)
+        num_dvs = length(dvs)
+        for i in 1:num_dvs
+            @assert dvs[i] isa Int
+            @assert dvs[i] == i
+        end
+
+        fntydvdeps = keys(dv_deps)
+        @assert length(dv_deps) == num_dvs
+        for i in 1:num_dvs
+            dv_dep_i = dv_deps[i]
+            @assert fntydvs[i] == fntydvdeps[i]
+            @assert length(dv_dep_i) <= num_ivs
+            fntydv_dep_i = keys(dv_dep_i)
+            for j in 1:length(dv_dep_i)
+                iv_symbol = fntydv_dep_i[j]
+                iv_index = dv_dep_i[j]
+                @assert iv_symbol isa Symbol
+                @assert iv_symbol in fntyivs
+                @assert iv_index == ivs[iv_symbol]
             end
         end
 
         if FType == VectorOfParameterizedMDFApplyFuncType
             f_types = typeof.(f)
-            @assert length(f) == DVsNum
+            @assert length(f) == num_dvs
             all_fastchains = all(map(ft_i->ft_i <: FastChain, f_types))
             if all_fastchains
                 initθ = DiffEqFlux.initial_params.(chain)
                 param_lengths = length.(initθ)
                 param_lengths_cumulative = cumsum(vcat([0], param_lengths...)) 
-                param_indices = [param_lengths_cumulative[i] + 1 : param_lengths_cumulative[i+1] for i in 1:length(param_lengths)]
+                param_indices = [param_lengths_cumulative[i] + 1 : param_lengths_cumulative[i+1] for i in 1:num_dvs]
                 extra = Dict(:param_indices => param_indices)
-                fs_mdf = map(1:DVsNum) do i
-                    MultiDimensionalFunction(f[i], ParameterizedMatrixApplyFuncType(), dv_deps[i], dvs[i:i], dv_deps[i:i])
+                fs_mdf = map(1:num_dvs) do i
+                    dv_i = (fntydvs[i],)
+                    @show dv_i
+                    @show dv_deps[i]
+                    iv_i = keys(dv_deps[i])
+                    @show iv_i
+                    MultiDimensionalFunction(f[i], ParameterizedMatrixApplyFuncType(), iv_i, dv_i, (iv_i,))
                 end
                 f = fs_mdf
             else
@@ -60,7 +86,34 @@ struct MultiDimensionalFunction{Func, FType <: AbstractApplyFuncType, Extra, IVs
             extra = Nothing
         end
 
-        new{typeof(f), FType, typeof(extra), IVsNum, DVsNum, typeof(dv_deps)}(f, ftype, extra, ivs, dvs, dv_deps)
+        new{typeof(f), FType, typeof(extra), IVsNT, DVsNT, DVDepsNT}(f, ftype, extra, ivs, dvs, dv_deps)
+    end
+
+    function MultiDimensionalFunction(f, ftype::FType, ivs, dvs, dv_deps) where {FType <: AbstractApplyFuncType}
+
+        for iv in ivs
+            @assert iv isa Symbol
+        end
+
+        for dv in dvs
+            @assert dv isa Symbol
+        end
+
+        @assert length(dv_deps) == length(dvs)
+        for dv_dep in dv_deps
+            @assert length(dv_dep) <= length(ivs)
+            for iv in dv_dep
+                @assert iv isa Symbol
+                @assert iv in ivs
+            end
+        end
+
+        ivs_nt = NamedTuple{ivs}(1:length(ivs))
+        dvs_nt = NamedTuple{dvs}(1:length(dvs))
+        dv_deps_tup = tuple(map(i->ivs_nt[dv_deps[i]], 1:length(dvs))...)
+        dv_deps_nt = NamedTuple{dvs}(dv_deps_tup)
+
+        MultiDimensionalFunction(f, ftype, ivs_nt, dvs_nt, dv_deps_nt)
     end
 end
 
@@ -68,13 +121,16 @@ end
 
 @generated function (f::MultiDimensionalFunction{Func, VectorOfParameterizedMDFApplyFuncType})(θ, x::Union{<:Real, AbstractVector{<:Real}}...; flat=Val{false}) where {Func}
     quote
-        # slice out the portion of θ that is appropriate and then call the sub MDF with that slice on the appropriate data. currently only supports homogenous
+        @assert length(x) == length(f.ivs) # assuming uniform local indexing
+        num_dvs = length(f.dvs)
         param_indices = f.extra_data[:param_indices]
         f_evals = Vector{Array{eltype(θ)}}(undef, length(f.dvs))
-        for i in 1:length(f.dvs)
+        for i in 1:num_dvs
+            ivs_i = f.dv_deps[i]
+            # slice out the portion of θ that is appropriate and then call the sub MDF with that slice on the appropriate data
+            x_i = x[collect(ivs_i)]
             param_indices_i = param_indices[i]
-            @show param_indices_i
-            f_evals[i] = f.f[i]((@view θ[param_indices_i]), x...; flat=flat)
+            f_evals[i] = f.f[i]((@view θ[param_indices_i]), x_i...; flat=flat)
         end
         return f_evals
     end
@@ -184,13 +240,38 @@ begin
 ivs = (:x1, :x2)
 dvs = (:u1, :u2)
 dv_deps = ((:x1, :x2), (:x1, :x2))
+#ivs_nt = NamedTuple{ivs}(ivs)
+#dvs_nt = NamedTuple{dvs}(dvs)
+#dv_deps_tup = tuple(map(i->ivs_nt[dv_deps[i]], 1:length(dvs))...)
+#dv_deps_nt = NamedTuple{dvs}(dv_deps_tup)
 chain = [FastChain(FastDense(2,8,Flux.tanh),FastDense(8,1)), FastChain(FastDense(2,6,Flux.tanh), FastDense(6,1))]
 initθ = DiffEqFlux.initial_params.(chain)
 flat_initθ = reduce(vcat, initθ)
 mdf = MultiDimensionalFunction(chain, VectorOfParameterizedMDFApplyFuncType(), ivs, dvs, dv_deps)
+i = 1
+mdf.f[i].ivs
+mdf.f[i].dvs
+mdf.f[i].dv_deps
 
 da = mdf(flat_initθ, ys, ys; flat=Val{false})
 end
+
+#begin
+ivs = (:x1, :x2)
+dvs = (:u1, :u2, :u3)
+dv_deps = ((:x2,), (:x1,), (:x1, :x2))
+chain = [FastChain(FastDense(1,8,Flux.tanh),FastDense(8,1)), FastChain(FastDense(1,6,Flux.tanh), FastDense(6,1)), FastChain(FastDense(2,4,Flux.tanh), FastDense(4,1))]
+initθ = DiffEqFlux.initial_params.(chain)
+flat_initθ = reduce(vcat, initθ)
+mdf = MultiDimensionalFunction(chain, VectorOfParameterizedMDFApplyFuncType(), ivs, dvs, dv_deps)
+
+i = 3
+mdf.f[i].ivs
+mdf.f[i].dvs
+mdf.f[i].dv_deps
+
+da = mdf(flat_initθ, ys, ys; flat=Val{false})
+#end
 nothing
 
 

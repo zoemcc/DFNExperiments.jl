@@ -6,6 +6,10 @@
     pybamm model spec -> (pybamm model gen + pybamm sim) -> NeuralPDE nn train -> compare pybamm sim to nn eval
     for the spm
 
+!finish homogeneous mdf applied to diffeqflux fastchains
+
+!make mdf heterogeneous
+
 from there, replace the neuralpde nn stuff with the multidimensional function interface I've been designing (put it in this repo for now for simplicity)
 
 then start integration with the other models and fix errors/ expand design as they come up
