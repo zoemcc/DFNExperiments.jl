@@ -111,6 +111,10 @@ end
     csn_pybamm = plot(ts, r_ns, csns, linetype=:contourf,title = "csn_pybamm")
     csp_pybamm = plot(ts, r_ps, csps, linetype=:contourf,title = "csp_pybamm")
 
+    pybamm_plots = [(name="q_pybamm", image=q_pybamm), (name="csn_pybamm", image=csn_pybamm), (name="csp_pybamm", image=csp_pybamm)]
+
+    has_given_pybamm_plots = [false]
+
     eval_network_at_sim_data = eval_network_at_sim_data_func()
 
     function plot_function(logger, step, phi, θ, indices_in_params, adaloss)
@@ -125,9 +129,17 @@ end
         csp_nn = plot(ts, r_ps, res[:evals][:csp], linetype=:contourf,title = "csp_nn")
         csp_error = plot(ts, r_ps, res[:errors][:csp], linetype=:contourf,title = "csp_error")
 
-        [(name="q_pybamm", image=q_pybamm), (name="q_nn", image=q_nn), (name="q_error", image=q_error),
-         (name="csn_pybamm", image=csn_pybamm), (name="csn_nn", image=csn_nn), (name="csn_error", image=csn_error),
-         (name="csp_pybamm", image=csp_pybamm), (name="csp_nn", image=csp_nn), (name="csp_error", image=csp_error)]
+
+
+        eval_compare_plots = [(name="q_nn", image=q_nn), (name="q_error", image=q_error),
+                              (name="csn_nn", image=csn_nn), (name="csn_error", image=csn_error),
+                              (name="csp_nn", image=csp_nn), (name="csp_error", image=csp_error)]
+        if !(has_given_pybamm_plots[1])
+            has_given_pybamm_plots[1] = true
+            vcat(pybamm_plots, eval_compare_plots)
+        else
+            eval_compare_plots
+        end
     end
     return plot_function
 end
