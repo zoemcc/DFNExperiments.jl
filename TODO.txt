@@ -1,5 +1,6 @@
-run neuralpde with the old non experiment manager interface on the spm model generated 
-    (programmatically fix the model possibly? I think I need to expand the derivatives so I need to figure out how to do that cleanly again)
+!run neuralpde with the old non experiment manager interface on the spm model generated 
+    (programmatically fix the model possibly? I think I need to expand the derivatives so I need to figure out how to do that cleanly again.)
+    ^ wasn't necessary
 
 Finish hooking up the experiment manager to the SPM example to finish the entire loop from 
     pybamm model spec -> (pybamm model gen + pybamm sim) -> NeuralPDE nn train -> compare pybamm sim to nn eval

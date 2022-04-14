@@ -60,9 +60,9 @@ function generate_sim_model(model::M; current_input=false, output_dir=nothing) w
     dvs_sim::Vector{Matrix{Float64}} = map(dv_names) do dv_name
         data = get_one_of_two(sol_data, dependent_variables_to_pybamm_names[dv_name], string(dv_name))
         data_mat = reduce(hcat, data)
-        # make sure time is last axis, this needs the check so we don't flip data that only depends on time
-        if size(data_mat, 1) != 1
-            data_mat = collect(data_mat')
+        # make sure time is first axis, this needs the check so we don't flip data that only depends on time
+        if size(data_mat, 1) == 1
+            data_mat = data_mat
         end
         data_mat
     end
@@ -74,7 +74,7 @@ function generate_sim_model(model::M; current_input=false, output_dir=nothing) w
         ),
         :dvs => Dict(
             :names => dv_names,
-            :deps => [[:t], [:r_n, :t], [:r_p, :t]], # TODO: change this to work for more than just SPM
+            :deps => [[:t], [ :t, :r_n], [:t, :r_p]], # TODO: change this to work for more than just SPM
             :data => dvs_sim,
         ) 
     )
@@ -108,7 +108,8 @@ function read_sim_data(output_dir_or_file::AbstractString)
     iv_nt = NamedTuple{iv_syms}(iv_data)
     dv_syms = tuple(Symbol.(sim_data_strs["dvs"]["names"])...)
     dv_deps = tuple(map(x->NamedTuple{tuple(Symbol.(x)...)}(tuple((1:length(x))...)), sim_data_strs["dvs"]["deps"])...)
-    dv_data = tuple(reduce.((v1, v2) -> hcat(Float64.(v1), Float64.(v2)), sim_data_strs["dvs"]["data"])...)
+    remove_redundant_firstdim(x) = size(x, 1) == 1 ? x[1, :] : x
+    dv_data = tuple(remove_redundant_firstdim.(reduce.((v1, v2) -> hcat(Float64.(v1), Float64.(v2)), sim_data_strs["dvs"]["data"]))...) # TODO: this won't work for later dims
     dv_data_nt = NamedTuple{dv_syms}(dv_data)
     dv_deps_nt = NamedTuple{dv_syms}(dv_deps)
     sim_data = (ivs = iv_nt, dvs = dv_data_nt, dv_deps = dv_deps_nt)
