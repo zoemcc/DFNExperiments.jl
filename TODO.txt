@@ -21,5 +21,9 @@ spme:
 !make the sim parsing go in reverse tensor order in general (since they use numpy's ordering I think)
 !generalize parsing for any order of array
 
+!get IfElse.ifelse to broadcast correctly
+add x to the concentration function generation in pybamm
+
+redo plotting and logging to loop over the given data
 
 then start integration with the other models and fix errors/ expand design as they come up

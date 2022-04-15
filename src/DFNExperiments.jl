@@ -124,6 +124,15 @@ function read_sim_data(output_dir_or_file::AbstractString)
 
 end
 
+# this is required to make the symbolic functions get broadcasted on ifelse functions, which we need for 
+# neuralpde loss functions.  SymbolicUtils.Code uses a cond ? true : false operator for some reason which 
+# can't get broadcasted the same way 
+function SymbolicUtils.Code.function_to_expr(::typeof(IfElse.ifelse), O, st::SymbolicUtils.Code.LazyState)
+    @show O
+    args = arguments(O)
+    :(IfElse.ifelse($(toexpr(args[1], st)), $(toexpr(args[2], st)), $(toexpr(args[3], st))))
+end
+
 export ty, fn, fnty
 export generate_sim_model, read_sim_data, pybamm_func_str
 export AbstractPyBaMMModel, SPMModel, SPMeModel
