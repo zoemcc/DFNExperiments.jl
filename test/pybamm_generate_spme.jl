@@ -1,6 +1,12 @@
+rebuild = false
+if rebuild
+    ENV["PYTHON"] = joinpath(ENV["ANACONDA_LOCATION"], "envs", "pybamm_dev", "bin", "python")
+    using Pkg
+    Pkg.build("PyCall")
+end
 begin
     using Distributed
-    NUM_WORKERS = 12
+    NUM_WORKERS = 0
     if NUM_WORKERS > 0
         if nworkers() != NUM_WORKERS
             addprocs(NUM_WORKERS - nworkers())
@@ -26,11 +32,12 @@ end
     using Plots
     using GalacticOptim
     using Printf
+    using IfElse
 end
 
 begin 
-    regenerate_sim = false
-    model = SPMModel()
+    regenerate_sim = true
+    model = SPMeModel()
     seed = 1
     num_experiments = 120
     start_experiment = 80
@@ -216,9 +223,8 @@ function main(model, seed, regenerate_sim, num_experiments, start_experiment)
     experiment_manager = NeuralPDE.ExperimentManager(pde_system, hyperparameters, get_cb, log_options, neuralpde_workers)
 
 
-    NeuralPDE.run_experiment_queue(experiment_manager; remote=false, startat=start_experiment)
+    #NeuralPDE.run_experiment_queue(experiment_manager; remote=false, startat=start_experiment)
 end
 
 main(model, seed, regenerate_sim, num_experiments, start_experiment)
-
 nothing

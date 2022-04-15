@@ -55,6 +55,7 @@ function initialize_pybamm_funcs()
             "X-averaged negative particle concentration",
             "X-averaged positive particle concentration",
             "Electrolyte concentration",
+            "Porosity times concentration"
         ]
         return model, variables
 
@@ -284,9 +285,17 @@ function initialize_pybamm_funcs()
             #"pybamm/hardcoded_models/MTK_format/pybamm_solutions/" + model.name + ".pickle",
             #variables,
         #)
+        # solve_plot_generate(*spm_no_r(), current_input=False)
+        # solve_plot_generate(*reduced_c(), current_input=False)
+        # solve_plot_generate(*spme(), current_input=False)
+        # solve_plot_generate(*reduced_c_phi(), current_input=False)
+        # solve_plot_generate(*reduced_c_phi_j(), current_input=False)
+        # solve_plot_generate(*dfn_no_r(), current_input=False)
+        # solve_plot_generate(*dfn(), current_input=False)
+        # solve_plot_generate(*dfn(), current_input=True)
 
         return sim, mtk_str, variables
-    """
+        """
 
-end
+    end
 

@@ -10,6 +10,16 @@
 
 !make mdf heterogeneous
 
-from there, replace the neuralpde nn stuff with the multidimensional function interface I've been designing (put it in this repo for now for simplicity)
+!from there, replace the neuralpde nn stuff with the multidimensional function interface I've been designing (put it in this repo for now for simplicity)
+
+!start on next model
+
+spme:
+!fixed a lot of mtk generation stuff
+!added correct tracking variable
+!add dependent variable dependencies to a dict for easier parsing
+!make the sim parsing go in reverse tensor order in general (since they use numpy's ordering I think)
+!generalize parsing for any order of array
+
 
 then start integration with the other models and fix errors/ expand design as they come up
