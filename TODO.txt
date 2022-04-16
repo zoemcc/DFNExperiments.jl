@@ -31,6 +31,7 @@ add kwargs handling to StructGenerator
 then start integration with the other models and fix errors/ expand design as they come up
 
 collapse the concatenation terms so that it's just one concatenation term and then all the logic is combined so we only have to do one ifelse per equation
+    (not strictly necessary but it would be a great optimization and for ease of understanding)
 
 handle the x / xn / xp discrepancy again. I think last time I just put the variable that corresponded to the integration domain of the equation in there? 
     so how do I figure that out programmatically. 
