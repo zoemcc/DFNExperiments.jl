@@ -22,8 +22,11 @@ spme:
 !generalize parsing for any order of array
 
 !get IfElse.ifelse to broadcast correctly
-add x to the concentration function generation in pybamm
+!add x to the concentration function generation in pybamm
+!redo plotting and logging to loop over the given data
 
-redo plotting and logging to loop over the given data
+make pybamm spit out the indvars in the same order each time
 
 then start integration with the other models and fix errors/ expand design as they come up
+
+figure out how to get pybamm to spit out the boundary data in solution as well? the interior is fine for most stuff though
