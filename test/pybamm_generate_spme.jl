@@ -35,113 +35,92 @@ begin
     seed = 1
     num_experiments = 120
     start_experiment = 1
+    plot_frequency = 5_00
+    log_frequency = 1_00
+    iterations = 1_000
+
+    models_dir = abspath(joinpath(@__DIR__, "..", "models"))
+    model_str = pybamm_func_str(model)
+    output_dir = joinpath(models_dir, "$(model_str)")
 end
 
 @everywhere function eval_network_at_sim_data_func(chains)
     sim_data = read_sim_data(output_dir)
-    ts = sim_data[:ivs][:t]
-    r_ns = sim_data[:ivs][:r_n]
-    r_ps = sim_data[:ivs][:r_p]
-    qs = sim_data[:dvs][:Q_Ah]
-    csns = sim_data[:dvs][:c_s_n_xav]
-    csps = sim_data[:dvs][:c_s_p_xav]
-    qs_norm = LinearAlgebra.norm(qs)
-    csns_norm = LinearAlgebra.norm(csns)
-    csps_norm = LinearAlgebra.norm(csps)
-
     ivs = keys(sim_data[:ivs])
     dvs = keys(sim_data[:dvs])
     dv_deps = collect(map(keys, sim_data[:dv_deps]))
+    num_dvs = length(dvs)
+
+    ground_truths = map(dv->sim_data[:dvs][dv], dvs)
+    ground_truths_norm = LinearAlgebra.norm.(ground_truths)
 
     mdf = MultiDimensionalFunction(chains, VectorOfParameterizedMDFApplyFuncType(), ivs, dvs, dv_deps)
 
     function eval_network_at_sim_data(p)
-        qs_eval, csns_eval, csps_eval = mdf(p, values(sim_data[:ivs])...; flat=Val{false})
+        network_evals = mdf(p, values(sim_data[:ivs])...; flat=Val{false})
 
-        qs_error = qs_eval .- qs
-        csns_error = csns_eval .- csns
-        csps_error = csps_eval .- csps
+        errors = map(i -> network_evals[i] .- ground_truths[i], 1:num_dvs)
+        errors_norm = LinearAlgebra.norm.(errors)
+        errors_rel = map(i -> errors_norm[i] / ground_truths_norm[i], 1:num_dvs)
 
-        qs_error_norm = LinearAlgebra.norm(qs_error)
-        csns_error_norm = LinearAlgebra.norm(csns_error)
-        csps_error_norm = LinearAlgebra.norm(csps_error)
-
-        qs_error_rel = qs_error_norm / qs_norm
-        csns_error_rel = csns_error_norm / csns_norm
-        csps_error_rel = csps_error_norm / csps_norm
-
-        return (evals=(q=qs_eval, csn=csns_eval, csp=csps_eval),
-                errors=(q=qs_error, csn=csns_error, csp=csps_error),
-                error_norms=(q=qs_error_norm, csn=csns_error_norm, csp=csps_error_norm),
-                error_rels=(q=qs_error_rel, csn=csns_error_rel, csp=csps_error_rel))
+        return (dvs=dvs, network_evals=network_evals, errors=errors,
+                errors_norm=errors_norm, errors_rel=errors_rel, )
     end
 
 end
 
 @everywhere function get_cb(logger, iteration, chains)
-    #eval_network_at_sim_data = eval_network_at_sim_data_func(chains)
+    eval_network_at_sim_data = eval_network_at_sim_data_func(chains)
     cb = function (p,l)
-        if iteration[1] % 50 == 0
-            #res = eval_network_at_sim_data(p)
-            #@info "Iteration: $(iteration[1]), loss: $(l)" 
-            #@info "q_error_norm: $(@sprintf("%.4e", res[:error_norms][:q])), csn_error_norm: $(@sprintf("%.4e", res[:error_norms][:csn])), csp_error_norm: $(@sprintf("%.4e", res[:error_norms][:csp])), q_error_relative: $(@sprintf("%.4e", res[:error_rels][:q])), csn_error_relative: $(@sprintf("%.4e", res[:error_rels][:csn])), csp_error_relative: $(@sprintf("%.4e", res[:error_rels][:csp]))"
-            #error_rel_max = max(res[:error_rels][:q], res[:error_rels][:csn], res[:error_rels][:csp])
-            #log_value(logger, "errors/max_error_relative", error_rel_max; step=iteration[1])
-            #log_value(logger, "errors/q_error_norm", res[:error_norms][:q]; step=iteration[1])
-            #log_value(logger, "errors/csn_error_norm", res[:error_norms][:csn]; step=iteration[1])
-            #log_value(logger, "errors/csp_error_norm", res[:error_norms][:csp]; step=iteration[1])
-            #log_value(logger, "errors/q_error_relative", res[:error_rels][:q]; step=iteration[1])
-            #log_value(logger, "errors/csn_error_relative", res[:error_rels][:csn]; step=iteration[1])
-            #log_value(logger, "errors/csp_error_relative", res[:error_rels][:csp]; step=iteration[1])
+        if iteration[1] % log_frequency == 0
+            res = eval_network_at_sim_data(p)
+            error_rel_max = max(res[:errors_rel]...)
+            log_value(logger, "errors/max_error_relative", error_rel_max; step=iteration[1])
+            for (i, dv) in enumerate(res[:dvs])
+                log_value(logger, "errors/$(string(dv))_error_norm", res[:errors_norm][i]; step=iteration[1])
+                log_value(logger, "errors/$(string(dv))_error_relative", res[:errors_rel][i]; step=iteration[1])
+            end
         end
-        #iteration[1] += 1
-
         return false
     end
     return cb
 end
 
+function do_plot(data_array::AbstractArray{R, N}, iv_data, deps, name) where {R, N}
+    used_ivs = map(iv->iv_data[iv], deps)
+    if N == 1
+        plot(used_ivs..., data_array, title=name)
+    elseif N == 2
+        plot(reverse(used_ivs)..., data_array, linetype=:contourf, title=name)
+    else
+        println("no plot defined for arrays with more than 2 axes")
+        nothing
+    end
+end
+
 @everywhere function get_plot_function(logger, iteration, chains)
-    #sim_data = read_sim_data(output_dir)
-    #ts = sim_data[:ivs][:t]
-    #r_ns = sim_data[:ivs][:r_n]
-    #r_ps = sim_data[:ivs][:r_p]
-    #qs = sim_data[:dvs][:Q_Ah]
-    #csns = sim_data[:dvs][:c_s_n_xav]
-    #csps = sim_data[:dvs][:c_s_p_xav]
+    sim_data = read_sim_data(output_dir)
+    dvs = keys(sim_data[:dvs])
+    dv_deps = collect(map(keys, sim_data[:dv_deps]))
+    num_dvs = length(dvs)
+    iv_data = sim_data[:ivs]
+    pybamm_plots = map(i->(name="$(string(dvs[i]))_pybamm", image=do_plot(sim_data[:dvs][i], iv_data, dv_deps[i], "$(string(dvs[i]))_pybamm")), 1:num_dvs)
 
-    #q_pybamm = plot(ts, qs, title = "q_pybamm");
-    #csn_pybamm = plot(ts, r_ns, csns, linetype=:contourf,title = "csn_pybamm")
-    #csp_pybamm = plot(ts, r_ps, csps, linetype=:contourf,title = "csp_pybamm")
+    have_given_pybamm_plots = [false]
 
-    #pybamm_plots = [(name="q_pybamm", image=q_pybamm), (name="csn_pybamm", image=csn_pybamm), (name="csp_pybamm", image=csp_pybamm)]
-
-    #have_given_pybamm_plots = [false]
-
-    #eval_network_at_sim_data = eval_network_at_sim_data_func(chains)
+    eval_network_at_sim_data = eval_network_at_sim_data_func(chains)
 
     function plot_function(θ, adaloss)
-        #res = eval_network_at_sim_data(θ)
+        res = eval_network_at_sim_data(θ)
+        eval_plots = map(i->(name="$(string(dvs[i]))_nn", image=do_plot(res[:network_evals][i], iv_data, dv_deps[i], "$(string(dvs[i]))_nn")), 1:num_dvs)
+        error_plots = map(i->(name="$(string(dvs[i]))_error", image=do_plot(res[:errors][i], iv_data, dv_deps[i], "$(string(dvs[i]))_error")), 1:num_dvs)
 
-        #q_nn = plot(ts, res[:evals][:q], title = "q_nn");
-        #q_error = plot(ts, res[:errors][:q], title = "q_error");
-
-        #csn_nn = plot(ts, r_ns, res[:evals][:csn], linetype=:contourf,title = "csn_nn")
-        #csn_error = plot(ts, r_ns, res[:errors][:csn], linetype=:contourf,title = "csn_error")
-
-        #csp_nn = plot(ts, r_ps, res[:evals][:csp], linetype=:contourf,title = "csp_nn")
-        #csp_error = plot(ts, r_ps, res[:errors][:csp], linetype=:contourf,title = "csp_error")
-
-        #eval_compare_plots = [(name="q_nn", image=q_nn), (name="q_error", image=q_error),
-                              #(name="csn_nn", image=csn_nn), (name="csn_error", image=csn_error),
-                              #(name="csp_nn", image=csp_nn), (name="csp_error", image=csp_error)]
-        #if !(have_given_pybamm_plots[1])
-            #have_given_pybamm_plots[1] = true
-            #vcat(pybamm_plots, eval_compare_plots)
-        #else
-            #eval_compare_plots
-        #end
-        []
+        if !(have_given_pybamm_plots[1])
+            have_given_pybamm_plots[1] = true
+            vcat(pybamm_plots, eval_plots, error_plots)
+        else
+            vcat(eval_plots, error_plots)
+        end
     end
     return plot_function
 end
@@ -157,7 +136,6 @@ function main(model, seed, num_experiments, start_experiment)
     include(joinpath(output_dir, "model.jl"))
     sim_data = read_sim_data(output_dir)
 
-    iterations = 1_000
     sg = StructGenerator(
         :CompositeHyperParameter,
         RandomChoice(1:2^10), # seed
@@ -190,7 +168,8 @@ function main(model, seed, num_experiments, start_experiment)
     hyperparametersweep = StructGeneratorHyperParameterSweep(seed, num_experiments, sg)
     hyperparameters = generate_hyperparameters(hyperparametersweep)
 
-    log_options = NeuralPDE.LogOptions(;plot_function=get_plot_function, log_dir=abspath(joinpath(@__DIR__, "..", "logs", model_str)))
+    log_options = NeuralPDE.LogOptions(;plot_function=get_plot_function, log_dir=abspath(joinpath(@__DIR__, "..", "logs", model_str)), 
+        log_frequency=log_frequency, plot_frequency=plot_frequency)
     neuralpde_workers = map(NeuralPDE.NeuralPDEWorker, workers())
     experiment_manager = NeuralPDE.ExperimentManager(pde_system, hyperparameters, get_cb, log_options, neuralpde_workers)
     experiment_index = start_experiment

@@ -1,4 +1,4 @@
-rebuild = false
+rebuild = true
 if rebuild
     ENV["PYTHON"] = joinpath(ENV["ANACONDA_LOCATION"], "envs", "pybamm_dev", "bin", "python")
     using Pkg
