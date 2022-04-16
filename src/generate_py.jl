@@ -4,8 +4,9 @@ function initialize_pybamm_funcs()
 
     class BaseModel(pybamm.lithium_ion.BaseModel):
         def __init__(self, name):
-            super().__init__({}, name)
-            self.timescale = pybamm.Scalar(3600)
+            super().__init__({"timescale": 3600}, name)
+            #super().__init__({}, name)
+            #self.timescale = pybamm.Scalar(3600)
             self.variables = {
                 "Time": pybamm.t,
                 "x": pybamm.standard_spatial_vars.x,

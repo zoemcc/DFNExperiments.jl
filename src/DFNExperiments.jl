@@ -26,14 +26,47 @@ function load_model(model::AbstractPyBaMMModel)
     pde_system
 end
 
+struct SPMnoRModel <: AbstractPyBaMMModel
+end
+
+pybamm_func_str(spm::SPMnoRModel) = "spm_no_r"
+
 struct SPMModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(spm::SPMModel) = "spm"
+
+
+struct ReducedCModel <: AbstractPyBaMMModel
+end
+
+pybamm_func_str(spm::ReducedCModel) = "reduced_c"
+
+
 struct SPMeModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(spm::SPMeModel) = "spme"
+
+struct ReducedCPhiModel <: AbstractPyBaMMModel
+end
+
+pybamm_func_str(spm::ReducedCPhiModel) = "reduced_c_phi"
+
+struct ReducedCPhiJModel <: AbstractPyBaMMModel
+end
+
+pybamm_func_str(spm::ReducedCPhiJModel) = "reduced_c_phi_j"
+
+struct DFNnoRModel <: AbstractPyBaMMModel
+end
+
+pybamm_func_str(spm::DFNnoRModel) = "dfn_no_r"
+
+struct DFNModel <: AbstractPyBaMMModel
+end
+
+pybamm_func_str(spm::DFNModel) = "dfn"
 
 
 include("generate_py.jl")
@@ -147,10 +180,11 @@ end
 
 export ty, fn, fnty
 export generate_sim_model, read_sim_data, pybamm_func_str, load_model, get_model_dir
-export AbstractPyBaMMModel, SPMModel, SPMeModel
+export AbstractPyBaMMModel
 export AbstractApplyFuncType, ParameterizedMatrixApplyFuncType, VectorOfParameterizedMDFApplyFuncType
 export MultiDimensionalFunction, cartesian_product
 export get_eval_network_at_sim_data_func, get_cb_func, get_plot_function, do_plot
+export SPMnoRModel, SPMModel, ReducedCModel, SPMeModel, ReducedCPhiModel, ReducedCPhiJModel, DFNnoRModel, DFNModel
 
 
 end
