@@ -2,10 +2,12 @@ module DFNExperiments
 
 using DiffEqFlux, Flux
 using NeuralPDE, ModelingToolkit, Symbolics, DomainSets
+import ModelingToolkit: Interval, infimum, supremum
 using LabelledArrays
 using JSON
 using PyCall
 using IfElse
+using Plots, LinearAlgebra, TensorBoardLogger
 
 include("utils.jl")
 
@@ -16,6 +18,13 @@ include("multi_dimensional_function.jl")
 abstract type AbstractPyBaMMModel end
 
 pybamm_func_str(::AbstractPyBaMMModel) = throw("Not implemented")
+
+get_model_dir(model::AbstractPyBaMMModel) = abspath(joinpath(@__DIR__, "..", "models", "$(pybamm_func_str(model))"))
+function load_model(model::AbstractPyBaMMModel)
+    model_dir = get_model_dir(model)
+    include(joinpath(model_dir, "model.jl"))
+    pde_system
+end
 
 struct SPMModel <: AbstractPyBaMMModel
 end
@@ -32,6 +41,8 @@ include("generate_py.jl")
 function __init__()
     initialize_pybamm_funcs()
 end
+
+include("plot_log.jl")
 
 function generate_sim_model(model::M; current_input=false, output_dir=nothing) where {M <: AbstractPyBaMMModel}
     model_str = pybamm_func_str(model)
@@ -123,21 +134,23 @@ function read_sim_data(output_dir_or_file::AbstractString)
     sim_data = (ivs = iv_nt, dvs = dv_data_nt, dv_deps = dv_deps_nt)
 
 end
+read_sim_data(model::AbstractPyBaMMModel) = read_sim_data(get_model_dir(model))
 
 # this is required to make the symbolic functions get broadcasted on ifelse functions, which we need for 
 # neuralpde loss functions.  SymbolicUtils.Code uses a cond ? true : false operator for some reason which 
 # can't get broadcasted the same way 
 function SymbolicUtils.Code.function_to_expr(::typeof(IfElse.ifelse), O, st::SymbolicUtils.Code.LazyState)
-    @show O
+    #@show O
     args = arguments(O)
     :(IfElse.ifelse($(toexpr(args[1], st)), $(toexpr(args[2], st)), $(toexpr(args[3], st))))
 end
 
 export ty, fn, fnty
-export generate_sim_model, read_sim_data, pybamm_func_str
+export generate_sim_model, read_sim_data, pybamm_func_str, load_model, get_model_dir
 export AbstractPyBaMMModel, SPMModel, SPMeModel
 export AbstractApplyFuncType, ParameterizedMatrixApplyFuncType, VectorOfParameterizedMDFApplyFuncType
 export MultiDimensionalFunction, cartesian_product
+export get_eval_network_at_sim_data_func, get_cb_func, get_plot_function, do_plot
 
 
 end
