@@ -31,6 +31,8 @@ SPMnoR: why is it outputting an @ ??? this is a very simple model, maybe it's no
 ReducedC: it wants to get the 'Discharge capacity [A.h]' (Q_Ah in other models) but the sim doesn't want to include that. can I pass in only the sim 
     variables to the sim object? currently the variables I pass in is a superset (just whatever variables the pycall generation script passes back to me)
 
+evaluate the generated losses on the sim data to validate that the equations are correct (IMPORTANT!)
+
 add kwargs handling to StructGenerator
 then start integration with the other models and fix errors/ expand design as they come up
 

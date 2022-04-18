@@ -8,6 +8,7 @@ begin
     end
 end
 @everywhere begin 
+    ENV["GKSwstype"] = "100"
     using Pkg
     Pkg.activate(abspath(joinpath(@__DIR__, "..")))
 end
@@ -21,18 +22,18 @@ begin
     model = SPMeModel()
     hyperseed = 1
     num_experiments = 120
-    start_experiment = 1
+    start_experiment = 27
     plot_frequency = 5_000
     log_frequency = 1_000
     checkpoint_frequency = 5_000
-    iterations = 100_000
+    iterations = 400_000
 
     hyperparameter_generator = StructGenerator(
         :CompositeHyperParameter,
         RandomChoice(1:2^10), # seed
         StructGenerator( # nn
             :SimpleFeedForwardNetwork, # type/constructor name
-            RandomChoice(3:5),
+            RandomChoice(5:8),
             RandomChoice(64, 128),
             RandomChoice(:GELUNonLin, :SigmoidNonLin),
             :GlorotUniformParams
