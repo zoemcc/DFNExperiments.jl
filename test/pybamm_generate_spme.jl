@@ -8,6 +8,8 @@ begin
     end
 end
 @everywhere begin 
+    # https://github.com/JuliaPlots/Plots.jl/issues/1076
+    # for headless plots
     ENV["GKSwstype"] = "100"
     using Pkg
     Pkg.activate(abspath(joinpath(@__DIR__, "..")))
