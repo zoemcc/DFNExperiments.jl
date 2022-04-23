@@ -77,10 +77,10 @@ end
 
 include("plot_log.jl")
 
-function generate_sim_model(model::M; current_input=false, output_dir=nothing) where {M <: AbstractPyBaMMModel}
+function generate_sim_model(model::M; current_input=false, output_dir=nothing, num_pts=100) where {M <: AbstractPyBaMMModel}
     model_str = pybamm_func_str(model)
     current_input_str = current_input ? "True" : "False" 
-    sim, mtk_str, variables = py"solve_plot_generate(*$$(model_str)(), current_input=$$(current_input_str))"
+    sim, mtk_str, variables = py"solve_plot_generate(*$$(model_str)(), current_input=$$(current_input_str), num_pts=$$(num_pts))"
 
     if typeof(output_dir) <: AbstractString
         if !isdir(output_dir)
@@ -143,7 +143,7 @@ function generate_sim_model(model::M; current_input=false, output_dir=nothing) w
     end
     sim_data_nt = read_sim_data(sim_filename)
 
-    (sim_data=sim_data_nt, pde_system=pde_system)
+    (sim_data=sim_data_nt, pde_system=pde_system, sim=sim, variables=variables)
 end
 
 function read_sim_data(output_dir_or_file::AbstractString)

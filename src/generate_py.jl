@@ -240,7 +240,7 @@ function initialize_pybamm_funcs()
         return model, variables
 
 
-    def solve_plot_generate(model, variables, current_input=False):
+    def solve_plot_generate(model, variables, current_input=False, num_pts=100):
         common_vars = ["Time", "x", "x_n", "x_p", "r_n", "r_p", "Discharge capacity [A.h]"]
         variables = list(set(common_vars + variables))
         dep_vars = [x for x in variables if x not in common_vars]
@@ -260,7 +260,7 @@ function initialize_pybamm_funcs()
             inputs = {}
 
         var = pybamm.standard_spatial_vars
-        var_pts = {var.x_n: 100, var.x_s: 100, var.x_p: 100, var.r_n: 100, var.r_p: 100}
+        var_pts = {var.x_n: num_pts, var.x_s: num_pts, var.x_p: num_pts, var.r_n: num_pts, var.r_p: num_pts}
 
         sim = pybamm.Simulation(model, var_pts=var_pts, parameter_values=parameter_values)
         sim.set_parameters()
@@ -275,6 +275,7 @@ function initialize_pybamm_funcs()
         parameter_values._replace_callable_function_parameters = True
         sim = pybamm.Simulation(model, var_pts=var_pts, parameter_values=parameter_values)
         sim.solve([0, 3600], inputs=inputs)
+        #sim.mesh.add_ghost_meshes()
         pybamm.set_logging_level("INFO")
         sim.solve([0, 3600], inputs=inputs)
 

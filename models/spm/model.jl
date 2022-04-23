@@ -1,12 +1,12 @@
 begin
 using IfElse
-# ('negative particle',) -> r_n
 # ('positive particle',) -> r_p
-@parameters t r_n r_p
+# ('negative particle',) -> r_n
+@parameters t r_p r_n
 independent_variables_to_pybamm_names = Dict(
   :t => "Time",
-  :r_n => "negative particle",
   :r_p => "positive particle",
+  :r_n => "negative particle",
 )
 # 'Discharge capacity [A.h]' -> Q_Ah
 # 'X-averaged negative particle concentration' -> c_s_n_xav
@@ -23,20 +23,20 @@ dependent_variables_to_dependencies = Dict(
   :c_s_p_xav => (:t, :r_p),
 )
 Dt = Differential(t)
-Dr_n = Differential(r_n)
 Dr_p = Differential(r_p)
+Dr_n = Differential(r_n)
 
 # 'X-averaged negative particle concentration' equation
-cache_5318034513282819753 = 8.813457647415216 * (1 / r_n^2 * Dr_n(r_n^2 * Dr_n(c_s_n_xav(t, r_n))))
+cache_m6088824936684274029 = 8.813457647415216 * (1 / r_n^2 * Dr_n(r_n^2 * Dr_n(c_s_n_xav(t, r_n))))
 
 # 'X-averaged positive particle concentration' equation
-cache_m2824759446661394201 = 22.598609352346717 * (1 / r_p^2 * Dr_p(r_p^2 * Dr_p(c_s_p_xav(t, r_p))))
+cache_m4301170754477126441 = 22.598609352346717 * (1 / r_p^2 * Dr_p(r_p^2 * Dr_p(c_s_p_xav(t, r_p))))
 
 
 eqs = [
    Dt(Q_Ah(t)) ~ 4.27249308415467,
-   Dt(c_s_n_xav(t, r_n)) ~ cache_5318034513282819753,
-   Dt(c_s_p_xav(t, r_p)) ~ cache_m2824759446661394201,
+   Dt(c_s_n_xav(t, r_n)) ~ cache_m6088824936684274029,
+   Dt(c_s_p_xav(t, r_p)) ~ cache_m4301170754477126441,
 ]
 
 
@@ -53,16 +53,16 @@ ics_bcs = [
 ]
 
 t_domain = Interval(0.000,0.159)
-r_n_domain = Interval(0.0, 1.0)
 r_p_domain = Interval(0.0, 1.0)
+r_n_domain = Interval(0.0, 1.0)
 
 domains = [
    t in t_domain,
-   r_n in r_n_domain,
    r_p in r_p_domain,
+   r_n in r_n_domain,
 ]
 
-ind_vars = [t, r_n, r_p]
+ind_vars = [t, r_p, r_n]
 dep_vars = [Q_Ah(t), c_s_n_xav(t, r_n), c_s_p_xav(t, r_p)]
 
 @named SPM_pde_system = PDESystem(eqs, ics_bcs, domains, ind_vars, dep_vars)

@@ -25,13 +25,21 @@ spme:
 !add x to the concentration function generation in pybamm
 !redo plotting and logging to loop over the given data
 
+!figure out how to get pybamm to also output the variable values on the edge of the domains (needed for model eval/debugging)
+  !add a ghost node to it from my side? I don't know that pybamm will allow me to add ghost nodes to neumann even though I want it 
+    ! no, I figured out how to call the solution variable directly, and it does a very small amount of extrapolation
+
+!add a num_pts input to the simulation to control fidelity
+
+evaluate the generated losses on the sim data (using the call functions) to validate that the equations are correct (IMPORTANT!)
+    on a progression of num_pts resolutions to show that the loss is decreasing as resolution increases (up to a point)
+
 make pybamm spit out the indvars in the same order each time
 
 SPMnoR: why is it outputting an @ ??? this is a very simple model, maybe it's not reading the variable number correctly.
 ReducedC: it wants to get the 'Discharge capacity [A.h]' (Q_Ah in other models) but the sim doesn't want to include that. can I pass in only the sim 
     variables to the sim object? currently the variables I pass in is a superset (just whatever variables the pycall generation script passes back to me)
 
-evaluate the generated losses on the sim data to validate that the equations are correct (IMPORTANT!)
 
 add kwargs handling to StructGenerator
 then start integration with the other models and fix errors/ expand design as they come up
@@ -42,5 +50,4 @@ collapse the concatenation terms so that it's just one concatenation term and th
 handle the x / xn / xp discrepancy again. I think last time I just put the variable that corresponded to the integration domain of the equation in there? 
     so how do I figure that out programmatically. 
 
-figure out how to get pybamm to spit out the boundary data in solution as well? the interior is fine for most stuff though
 
