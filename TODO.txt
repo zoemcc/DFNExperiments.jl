@@ -32,6 +32,9 @@ spme:
 !add a num_pts input to the simulation to control fidelity
 
 evaluate the generated losses on the sim data (using the call functions) to validate that the equations are correct (IMPORTANT!)
+    !need to make the interpolation higher order because the linear interpolation is failing on the 2nd order stuff
+    !finished for spm
+    need to generalize this process and add the scale dependence
     on a progression of num_pts resolutions to show that the loss is decreasing as resolution increases (up to a point)
 
 make pybamm spit out the indvars in the same order each time
