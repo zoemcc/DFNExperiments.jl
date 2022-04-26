@@ -41,7 +41,10 @@ spme:
 
 spme: why does the generated loss do so poorly?
 
-make pybamm spit out the indvars in the same order each time
+!add a simpler ifelse test case 
+    !this works, so why doesn't the larger one?
+
+!make pybamm spit out the indvars in the same order each time
 
 SPMnoR: why is it outputting an @ ??? this is a very simple model, maybe it's not reading the variable number correctly.
 ReducedC: it wants to get the 'Discharge capacity [A.h]' (Q_Ah in other models) but the sim doesn't want to include that. can I pass in only the sim 
