@@ -4,6 +4,7 @@ using DiffEqFlux, Flux
 using NeuralPDE, ModelingToolkit, Symbolics, DomainSets
 import ModelingToolkit: Interval, infimum, supremum
 using LabelledArrays
+using Interpolations
 using JSON
 using PyCall
 using IfElse
@@ -16,6 +17,8 @@ abstract type AbstractApplyFuncType end
 include("multi_dimensional_function.jl")
 
 abstract type AbstractPyBaMMModel end
+
+Base.nameof(term::Term{Real, Base.ImmutableDict{DataType, Any}}) = (nameof ∘ operation ∘ Symbolics.value)(term)
 
 pybamm_func_str(::AbstractPyBaMMModel) = throw("Not implemented")
 
@@ -77,7 +80,19 @@ end
 
 include("plot_log.jl")
 
-function generate_sim_model(model::M; current_input=false, output_dir=nothing, num_pts=100) where {M <: AbstractPyBaMMModel}
+struct FastChainInterpolator{I}
+    interpolator::I
+end
+function (fastchaininterpolator::FastChainInterpolator)(v, θ) 
+    #println("in fastchaininterpolator")
+    #@show v
+    inputs = [@view v[i, :] for i in 1:size(v, 1)]
+    reshape(fastchaininterpolator.interpolator.(inputs...), 1, size(v, 2))
+end
+DiffEqFlux.initial_params(::FastChainInterpolator) = Float64[]
+
+
+function generate_sim_model_and_test(model::M; current_input=false, output_dir=nothing, num_pts=100) where {M <: AbstractPyBaMMModel}
     model_str = pybamm_func_str(model)
     current_input_str = current_input ? "True" : "False" 
     sim, mtk_str, variables = py"solve_plot_generate(*$$(model_str)(), current_input=$$(current_input_str), num_pts=$$(num_pts))"
@@ -102,7 +117,7 @@ function generate_sim_model(model::M; current_input=false, output_dir=nothing, n
     iv_names = nameof.(pde_system.ivs)
     @show iv_names
     @show independent_variables_to_pybamm_names
-    dv_names = (nameof ∘ operation ∘ Symbolics.value).(pde_system.dvs)
+    dv_names = nameof.(pde_system.dvs)
     @show dv_names
     @show dependent_variables_to_pybamm_names
     @show keys(sol_data)
@@ -143,7 +158,45 @@ function generate_sim_model(model::M; current_input=false, output_dir=nothing, n
     end
     sim_data_nt = read_sim_data(sim_filename)
 
-    (sim_data=sim_data_nt, pde_system=pde_system, sim=sim, variables=variables)
+    dvs_interpolation_fastchain = map(dep_vars) do dv
+        dv_pybamm_name = dependent_variables_to_pybamm_names[nameof(dv)]
+        dv_processed = sim.solution.__getitem__(dv_pybamm_name)
+        dv_pybamm_interpolation_function = dv_processed._interpolation_function
+        deps = dependent_variables_to_dependencies[nameof(dv)]
+        num_deps = length(deps)
+        py_axis_name = (:x, :y, :z)
+        iv_ranges = map(1:num_deps) do i
+            iv = deps[i]
+            iv_pybamm_name = independent_variables_to_pybamm_names[iv]
+            iv_axis_name = py_axis_name[i]
+            iv_grid = dv_pybamm_interpolation_function[iv_axis_name]
+            # assume time is first
+            iv_scale = i == 1 ? dv_processed.timescale : dv_processed.length_scales[iv_pybamm_name]
+            range(Interval(iv_grid[1] / iv_scale, iv_grid[end] / iv_scale), length(iv_grid))
+        end
+        dv_grid = permutedims(reshape(dv_pybamm_interpolation_function[py_axis_name[num_deps + 1]], reverse(length.(iv_ranges))...), reverse(1:num_deps))
+        dv_interpolation = FastChainInterpolator(scale(interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), iv_ranges...))
+
+        dv_fastchain = FastChain(dv_interpolation)
+
+        (dv_interpolation, dv_fastchain)
+    end
+    dvs_interpolation = map(first, dvs_interpolation_fastchain)
+    dvs_fastchain = map(x->x[2], dvs_interpolation_fastchain)
+
+    strategy =  NeuralPDE.StochasticTraining(1024, 1024)
+    discretization = NeuralPDE.PhysicsInformedNN(dvs_fastchain, strategy)
+    prob = NeuralPDE.discretize(pde_system, discretization)
+    total_loss = prob.f(Float64[], Float64[])
+
+    (sim_data=sim_data_nt, pde_system=pde_system, sim=sim, variables=variables, 
+    independent_variables_to_pybamm_names=independent_variables_to_pybamm_names, 
+    dependent_variables_to_pybamm_names=dependent_variables_to_pybamm_names,
+    dependent_variables_to_dependencies=dependent_variables_to_dependencies,
+    dvs_interpolation=dvs_interpolation,
+    dvs_fastchain=dvs_fastchain,
+    prob=prob,
+    total_loss=total_loss)
 end
 
 function read_sim_data(output_dir_or_file::AbstractString)
@@ -179,7 +232,7 @@ function SymbolicUtils.Code.function_to_expr(::typeof(IfElse.ifelse), O, st::Sym
 end
 
 export ty, fn, fnty
-export generate_sim_model, read_sim_data, pybamm_func_str, load_model, get_model_dir
+export generate_sim_model_and_test, read_sim_data, pybamm_func_str, load_model, get_model_dir
 export AbstractPyBaMMModel
 export AbstractApplyFuncType, ParameterizedMatrixApplyFuncType, VectorOfParameterizedMDFApplyFuncType
 export MultiDimensionalFunction, cartesian_product

@@ -16,11 +16,12 @@ begin
 end
 
 begin 
+    ev = Float64[]
     #models = [SPMModel(), SPMeModel()]
     all_models = [SPMnoRModel(), SPMModel(), ReducedCModel(), SPMeModel(), ReducedCPhiModel(), ReducedCPhiJModel(), DFNnoRModel(), DFNModel()]
-    num_pts = 4000
+    num_pts = 100
     #all_models = [ReducedCModel(), SPMeModel(), ReducedCPhiModel(), ReducedCPhiJModel(), DFNnoRModel(), DFNModel()]
-    model = all_models[2]
+    model = all_models[4]
     #for model in all_models
     begin
         models_dir = abspath(joinpath(@__DIR__, "..", "models"))
@@ -30,7 +31,10 @@ begin
         current_input = false
         @show model
         #sim_data, pde_system, sim, variables = generate_sim_model(model; current_input=current_input, output_dir=output_dir, num_pts=num_pts)
-        sim_data, pde_system, sim, variables = generate_sim_model(model; current_input=current_input, num_pts=num_pts)
+        sim_data, pde_system, sim, variables, independent_variables_to_pybamm_names, 
+            dependent_variables_to_pybamm_names, dependent_variables_to_dependencies, dvs_interpolation,
+            dvs_fastchain, prob, total_loss = 
+            generate_sim_model_and_test(model; current_input=current_input, output_dir=output_dir, num_pts=num_pts)
         #include(model_file)
         # solvars = [sim.solution.__getitem__(var) for var in variables]
         # solcsn = solvars[end]
@@ -40,7 +44,7 @@ end
 #@named modded_pde_system = PDESystem(pde_system.eqs, pde_system.bcs, pde_system.domain[[1,3,2]], pde_system.ivs[[1,3,2]], pde_system.dvs)
 #@named modded_pde_system = PDESystem([pde_system.dvs[1] ~ pde_system.dvs[1]], pde_system.bcs, pde_system.domain, pde_system.ivs, pde_system.dvs)
 #@named modded_pde_system = PDESystem(pde_system.eqs, [pde_system.dvs[1] ~ pde_system.dvs[1]], pde_system.domain, pde_system.ivs, pde_system.dvs)
-@named modded_pde_system = PDESystem(pde_system.eqs[[2]], [pde_system.dvs[1] ~ pde_system.dvs[1]], pde_system.domain, pde_system.ivs, pde_system.dvs)
+#@named modded_pde_system = PDESystem(pde_system.eqs[[2]], [pde_system.dvs[1] ~ pde_system.dvs[1]], pde_system.domain, pde_system.ivs, pde_system.dvs)
 @named modded_pde_system = PDESystem(pde_system.eqs, [pde_system.dvs[1] ~ pde_system.dvs[1]], pde_system.domain, pde_system.ivs, pde_system.dvs)
 solvars = Dict([(var=>sim.solution.__getitem__(var)) for var in variables]...)
 solq = solvars["Discharge capacity [A.h]"]
@@ -71,26 +75,6 @@ csn(t, r) = solcsn(t=t * solcsn.timescale, r=r*solcsn.length_scales["negative pa
 csntf(t) = begin csnr(r) = csn(t, r) end
 csp(t, r) = solcsp(t=t * solcsp.timescale, r=r*solcsp.length_scales["positive particle size"], x=1.0)[1]
 csptf(t) = begin cspr(r) = csp(t, r) end
-#@show abs(central_fdm(5, 1, max_range=1e-6)(csntf(1), 1) - (-0.14182855923368468))
-#@show abs(central_fdm(5, 1, max_range=1e-6)(csntf(1), 0) - 0)
-#@show abs(forward_fdm(5, 1)(csntf(1), 0) - 0)
-#@show abs(backward_fdm(5, 1)(csntf(1), 1) - (-0.14182855923368468))
-#@show abs(central_fdm(5, 1, max_range=1e-6)(csptf(1), 1) - (0.03237700710041634))
-#@show abs(central_fdm(5, 1, max_range=1e-6)(csptf(1), 0) - 0)
-#@show abs(forward_fdm(5, 1)(csptf(1), 0) - 0)
-#@show abs(backward_fdm(5, 1)(csptf(1), 1) - (0.03237700710041634))
-#@show central_fdm(5, 1, max_range=1e-6)(csptf(1), 1)
-ts = range(Interval(0,1), 100)
-#csn_accurate = map(tr->csn(tr[1], tr[2]), collect(product(ts, ts)))
-#csp_accurate = map(tr->csp(tr[1], tr[2]), collect(product(ts, ts)))
-#@show (csn_accurate[end, end] - csn_accurate[end, end-1]) / (ts[end] - ts[end-1])
-#@show (csp_accurate[end, end] - csp_accurate[end, end-1]) / (ts[end] - ts[end-1])
-#@show abs((csn_accurate[end, end] - csn_accurate[end, end-1]) / (ts[end] - ts[end-1]) - (-0.14182855923368468))
-#@show abs((csp_accurate[end, end] - csp_accurate[end, end-1]) / (ts[end] - ts[end-1]) - (0.03237700710041634))
-#@show abs((csn_accurate[end, 2] - csn_accurate[end, 1]) / (ts[2] - ts[1]))
-#@show abs((csp_accurate[end, 2] - csp_accurate[end, 1]) / (ts[2] - ts[1]))
-#disc = sim._disc
-#@show disc.y_slices_explicit
 
 
 function matrixapply_q(v, θ)
@@ -145,5 +129,7 @@ discretization = NeuralPDE.PhysicsInformedNN(spm_fcs, strategy)
 prob = NeuralPDE.discretize(pde_system,discretization)
 sym_prob = NeuralPDE.symbolic_discretize(modded_pde_system,discretization)
 prob.f(Float64[], Float64[])
+
+
 nothing
 
