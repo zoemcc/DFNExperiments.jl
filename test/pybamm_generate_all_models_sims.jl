@@ -1,4 +1,4 @@
-rebuild = false
+rebuild = true
 if rebuild
     ENV["PYTHON"] = joinpath(ENV["ANACONDA_LOCATION"], "envs", "pybamm_dev", "bin", "python")
     using Pkg
@@ -33,14 +33,16 @@ begin
         #sim_data, pde_system, sim, variables = generate_sim_model(model; current_input=current_input, output_dir=output_dir, num_pts=num_pts)
         sim_data, pde_system, sim, variables, independent_variables_to_pybamm_names, 
             dependent_variables_to_pybamm_names, dependent_variables_to_dependencies, dvs_interpolation,
-            dvs_fastchain, prob, total_loss = 
+            dvs_fastchain, prob, total_loss, modded_pde_system, symb_modded_pde_system = 
             generate_sim_model_and_test(model; current_input=current_input, output_dir=output_dir, num_pts=num_pts)
+        nothing
         #include(model_file)
         # solvars = [sim.solution.__getitem__(var) for var in variables]
         # solcsn = solvars[end]
         # solcsn(t=0.15930183773127454 * solcsn.timescale, r=1.0*solcsn.length_scales["negative particle size"], x=-100.0)
     end
 end
+"""
 #@named modded_pde_system = PDESystem(pde_system.eqs, pde_system.bcs, pde_system.domain[[1,3,2]], pde_system.ivs[[1,3,2]], pde_system.dvs)
 #@named modded_pde_system = PDESystem([pde_system.dvs[1] ~ pde_system.dvs[1]], pde_system.bcs, pde_system.domain, pde_system.ivs, pde_system.dvs)
 #@named modded_pde_system = PDESystem(pde_system.eqs, [pde_system.dvs[1] ~ pde_system.dvs[1]], pde_system.domain, pde_system.ivs, pde_system.dvs)
@@ -58,6 +60,7 @@ trange = range(Interval(tgrid[1] / solq.timescale, tgrid[end] / solq.timescale),
 qgrid = interpq_py.y
 tgridn = interpcsn_py.x
 rgridn = interpcsn_py.y
+rgridp = interpcsp_py.y
 rnrange = range(Interval(rgridn[1] / solcsn.length_scales["negative particle size"], rgridn[end] / solcsn.length_scales["negative particle size"]), length(rgridn))
 rprange = range(Interval(rgridp[1] / solcsp.length_scales["positive particle size"], rgridp[end] / solcsp.length_scales["positive particle size"]), length(rgridp))
 tgridp = interpcsp_py.x
@@ -81,7 +84,7 @@ function matrixapply_q(v, θ)
     #println("inside q")
     #@show v
     #@show size(v)
-    retval = reshape(q_interp.(v), 1, size(v, 2))
+    retval = q_interp.(v[[1], :])
     #@show retval
     #@show size(retval)
     retval
@@ -133,3 +136,4 @@ prob.f(Float64[], Float64[])
 
 nothing
 
+"""

@@ -84,10 +84,11 @@ struct FastChainInterpolator{I}
     interpolator::I
 end
 function (fastchaininterpolator::FastChainInterpolator)(v, θ) 
-    #println("in fastchaininterpolator")
-    #@show v
-    inputs = [@view v[i, :] for i in 1:size(v, 1)]
-    reshape(fastchaininterpolator.interpolator.(inputs...), 1, size(v, 2))
+    println("in fastchaininterpolator")
+    @show v
+    inputs = [@view v[[i], :] for i in 1:size(v, 1)]
+    fastchaininterpolator.interpolator.(inputs...)
+    #reshape(fastchaininterpolator.interpolator.(inputs...), 1, size(v, 2))
 end
 DiffEqFlux.initial_params(::FastChainInterpolator) = Float64[]
 
@@ -184,9 +185,11 @@ function generate_sim_model_and_test(model::M; current_input=false, output_dir=n
     dvs_interpolation = map(first, dvs_interpolation_fastchain)
     dvs_fastchain = map(x->x[2], dvs_interpolation_fastchain)
 
-    strategy =  NeuralPDE.StochasticTraining(1024, 1024)
+    @named modded_pde_system = PDESystem(pde_system.eqs[[4]], pde_system.bcs[[1]], pde_system.domain, pde_system.ivs, pde_system.dvs)
+    strategy =  NeuralPDE.StochasticTraining(8, 8)
     discretization = NeuralPDE.PhysicsInformedNN(dvs_fastchain, strategy)
-    prob = NeuralPDE.discretize(pde_system, discretization)
+    prob = NeuralPDE.discretize(modded_pde_system, discretization)
+    symb_modded_pde_system = NeuralPDE.symbolic_discretize(modded_pde_system, discretization)
     total_loss = prob.f(Float64[], Float64[])
 
     (sim_data=sim_data_nt, pde_system=pde_system, sim=sim, variables=variables, 
@@ -196,7 +199,9 @@ function generate_sim_model_and_test(model::M; current_input=false, output_dir=n
     dvs_interpolation=dvs_interpolation,
     dvs_fastchain=dvs_fastchain,
     prob=prob,
-    total_loss=total_loss)
+    total_loss=total_loss,
+    modded_pde_system=modded_pde_system,
+    symb_modded_pde_system=symb_modded_pde_system)
 end
 
 function read_sim_data(output_dir_or_file::AbstractString)
