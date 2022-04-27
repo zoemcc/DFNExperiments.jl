@@ -20,7 +20,7 @@ begin
     ev = Float64[]
     #models = [SPMModel(), SPMeModel()]
     all_models = [SPMnoRModel(), SPMModel(), ReducedCModel(), SPMeModel(), ReducedCPhiModel(), ReducedCPhiJModel(), DFNnoRModel(), DFNModel()]
-    num_pts = 100
+    num_pts = 4000
     #all_models = [ReducedCModel(), SPMeModel(), ReducedCPhiModel(), ReducedCPhiJModel(), DFNnoRModel(), DFNModel()]
     model = all_models[4]
     #for model in all_models
@@ -38,27 +38,13 @@ begin
             generate_sim_model_and_test(model; current_input=current_input, output_dir=output_dir, num_pts=num_pts)
         nothing
         #include(model_file)
-        # solvars = [sim.solution.__getitem__(var) for var in variables]
+        #solvars = [sim.solution.__getitem__(var) for var in variables]
         # solcsn = solvars[end]
         # solcsn(t=0.15930183773127454 * solcsn.timescale, r=1.0*solcsn.length_scales["negative particle size"], x=-100.0)
     end
 end
+        solvars = [sim.solution.__getitem__(var) for var in variables]
 
-t = 0.1
-ts = range(pde_system.domain[1].domain, length=100)
-xs = range(pde_system.domain[4].domain, length=100)
-xs = range(start=0.6,stop=0.7, length=100)
-t = ts[1]
-txs = vcat(fill(t, 100)', xs')
-eps_c_es = vec(dvs_interpolation[4](txs, Float64[]))
-plot(xs, eps_c_es)
-anim = @animate for i in 1:length(ts)
-    t = ts[i]
-    txs = vcat(fill(t, 100)', xs')
-    eps_c_es = vec(dvs_interpolation[4](txs, Float64[]))
-    plot(xs, eps_c_es)
-end
-gif(anim, "gifs/spme_interp.gif",fps=30)
 nothing
 """
 #@named modded_pde_system = PDESystem(pde_system.eqs, pde_system.bcs, pde_system.domain[[1,3,2]], pde_system.ivs[[1,3,2]], pde_system.dvs)
@@ -155,3 +141,57 @@ prob.f(Float64[], Float64[])
 nothing
 
 """
+
+unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
+
+j = 4
+dv = pde_system.dvs[j]
+dv_pybamm_name = dependent_variables_to_pybamm_names[nameof(dv)]
+dv_processed = sim.solution.__getitem__(dv_pybamm_name)
+dv_pybamm_interpolation_function = dv_processed._interpolation_function
+deps = dependent_variables_to_dependencies[nameof(dv)]
+num_deps = length(deps)
+py_axis_name = (:x, :y, :z)
+new_iv_grid_length = 100
+iv_ranges = map(1:num_deps) do i
+    iv = deps[i]
+    iv_pybamm_name = independent_variables_to_pybamm_names[iv]
+    iv_axis_name = py_axis_name[i]
+    iv_grid = dv_pybamm_interpolation_function[iv_axis_name]
+    # assume time is first
+    iv_scale = i == 1 ? dv_processed.timescale : dv_processed.length_scales[iv_pybamm_name]
+    unscaled_iv_range = range(Interval(iv_grid[1], iv_grid[end]), new_iv_grid_length)
+    scaled_iv_range = range(Interval(iv_grid[1] / iv_scale, iv_grid[end] / iv_scale), new_iv_grid_length)
+    (unscaled_iv_range, scaled_iv_range)
+end
+unscaled_iv_ranges, scaled_iv_ranges = unzip(iv_ranges)
+unscaled_ivs_mat = reduce(hcat, map(collect, vec(collect(product(unscaled_iv_ranges...)))))
+dv_pybamm_interpolator = DFNExperiments.FastChainInterpolator(dv_pybamm_interpolation_function)
+dv_mat = first.(dv_pybamm_interpolator(unscaled_ivs_mat, Float64[]))
+dv_grid = reshape(dv_mat, fill(new_iv_grid_length, num_deps)...)
+dv_interpolation = DFNExperiments.FastChainInterpolator(scale(interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), scaled_iv_ranges...))
+
+using Plots
+t = 0.0
+ts = range(pde_system.domain[1].domain, length=100)
+xs = range(pde_system.domain[4].domain, length=100)
+xs = range(start=0.0,stop=1., length=100)
+t = ts[1]
+txs = vcat(fill(t, 100)', xs')
+c_es = vec(dvs_interpolation[4](txs, Float64[]))
+plot(xs, c_es)
+anim = @animate for i in 1:length(ts)
+    t = ts[i]
+    txs = vcat(fill(t, 100)', xs')
+    eps_c_es = vec(dvs_interpolation[4](txs, Float64[]))
+    plot(xs, eps_c_es)
+end
+gif(anim, "gifs/spme_interp.gif",fps=30)
+
+anim = @animate for i in 1:10
+    t = ts[i]
+    txs = vcat(fill(t, 100)', xs')
+    eps_c_es = vec(dvs_interpolation[4](txs, Float64[]))
+    plot(xs, eps_c_es)
+end
+gif(anim, "gifs/spme_interp_slow.gif",fps=1)

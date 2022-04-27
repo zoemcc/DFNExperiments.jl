@@ -266,7 +266,7 @@ def solve_plot_generate(model, variables, current_input=False, num_pts=100):
     sim = pybamm.Simulation(model, var_pts=var_pts, parameter_values=parameter_values)
     sim.set_parameters()
 
-    embed()
+    #embed()
 
     # Print MTK (to be copy-pasted to correct files)
     mtk_str = pybamm.get_julia_mtk_model(

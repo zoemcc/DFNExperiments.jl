@@ -32,3 +32,5 @@ function recursive_array_to_array(recursive_data; do_reverse=true)
     end
     data_array
 end
+
+unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))

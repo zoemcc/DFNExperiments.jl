@@ -6,6 +6,7 @@ import ModelingToolkit: Interval, infimum, supremum
 using LabelledArrays
 using Interpolations
 using JSON
+using IterTools
 using PyCall
 using IfElse
 using Plots, LinearAlgebra, TensorBoardLogger
@@ -167,6 +168,7 @@ function generate_sim_model_and_test(model::M; current_input=false, output_dir=n
         deps = dependent_variables_to_dependencies[nameof(dv)]
         num_deps = length(deps)
         py_axis_name = (:x, :y, :z)
+        new_iv_grid_length = 1000
         iv_ranges = map(1:num_deps) do i
             iv = deps[i]
             iv_pybamm_name = independent_variables_to_pybamm_names[iv]
@@ -174,21 +176,26 @@ function generate_sim_model_and_test(model::M; current_input=false, output_dir=n
             iv_grid = dv_pybamm_interpolation_function[iv_axis_name]
             # assume time is first
             iv_scale = i == 1 ? dv_processed.timescale : dv_processed.length_scales[iv_pybamm_name]
-            range(Interval(iv_grid[1] / iv_scale, iv_grid[end] / iv_scale), length(iv_grid))
+            unscaled_iv_range = range(Interval(iv_grid[1], iv_grid[end]), new_iv_grid_length)
+            scaled_iv_range = range(Interval(iv_grid[1] / iv_scale, iv_grid[end] / iv_scale), new_iv_grid_length)
+            (unscaled_iv_range, scaled_iv_range)
         end
-        dv_grid = permutedims(reshape(dv_pybamm_interpolation_function[py_axis_name[num_deps + 1]], reverse(length.(iv_ranges))...), reverse(1:num_deps))
-        #dv_interpolation = (interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), iv_ranges...)
-        dv_interpolation = FastChainInterpolator(scale(interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), iv_ranges...))
+        unscaled_iv_ranges, scaled_iv_ranges = unzip(iv_ranges)
+        unscaled_ivs_mat = reduce(hcat, map(collect, vec(collect(product(unscaled_iv_ranges...)))))
+        dv_pybamm_interpolator = FastChainInterpolator(dv_pybamm_interpolation_function)
+        dv_mat = first.(dv_pybamm_interpolator(unscaled_ivs_mat, Float64[]))
+        dv_grid = reshape(dv_mat, fill(new_iv_grid_length, num_deps)...)
+        #dv_grid = permutedims(reshape(dv_pybamm_interpolation_function[py_axis_name[num_deps + 1]], reverse(length.(iv_ranges))...), reverse(1:num_deps))
+        dv_interpolation = FastChainInterpolator(scale(interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), scaled_iv_ranges...))
 
         dv_fastchain = FastChain(dv_interpolation)
 
         (dv_interpolation, dv_fastchain)
     end
-    dvs_interpolation = map(first, dvs_interpolation_fastchain)
-    dvs_fastchain = map(x->x[2], dvs_interpolation_fastchain)
+    dvs_interpolation, dvs_fastchain = unzip(dvs_interpolation_fastchain)
 
     @named modded_pde_system = PDESystem(pde_system.eqs[[4]], pde_system.bcs[[1]], pde_system.domain, pde_system.ivs, pde_system.dvs)
-    strategy =  NeuralPDE.StochasticTraining(8, 8)
+    strategy =  NeuralPDE.StochasticTraining(1024, 1024)
     discretization = NeuralPDE.PhysicsInformedNN(dvs_fastchain, strategy)
     prob = NeuralPDE.discretize(modded_pde_system, discretization)
     symb_modded_pde_system = NeuralPDE.symbolic_discretize(modded_pde_system, discretization)
