@@ -39,10 +39,25 @@ spme:
         !(not doing, just testing that we get very low error on high res)
     still need to do for 3d dvs (need to figure out what the fourth scipy.interpolate variable is named after :z)
 
-spme: why does the generated loss do so poorly?
 
 !add a simpler ifelse test case 
     !this works, so why doesn't the larger one?
+    is it the derivatives through the Dx(concentration)??
+        try this in the easy test case
+
+spme and beyond: isn't generating the boundary conditions for eps_c_e
+    this is because the boundary conditions are specified for c_e and not eps_c_e so the transpiler isn't noting them.
+        can I have it convert at the end? how does it know that it needs to convert that equation?
+        c_e is a Concentration and eps_c_e is a ConcentrationVariable, that's the main way it was distinguishing to write or not
+        but there are other Concentrations that I don't want to save. how do I know to save the c_e one?
+
+spme: why does the generated loss do so poorly?
+    try diving into each concatenation and doing the variables within each domain separately and then only doing one final concatenation at the end.
+        this 
+    strangely, the loss does fine in the separator region (or, most of it)????
+    the loss does really bad after the separator up to like 0.66
+    oops, the interpolator is incorrectly scaled in x direction because of the different lengths of the regions. gonna do a really high res interpolation and then resample it w/ lower freq
+    can we generate the pde eqs in terms of just concentration? the porosity makes it super high freq at the boundaries but we don't want that necessarily.
 
 !make pybamm spit out the indvars in the same order each time
 

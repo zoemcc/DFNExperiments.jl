@@ -87,8 +87,9 @@ function (fastchaininterpolator::FastChainInterpolator)(v, θ)
     println("in fastchaininterpolator")
     @show v
     inputs = [@view v[[i], :] for i in 1:size(v, 1)]
-    fastchaininterpolator.interpolator.(inputs...)
-    #reshape(fastchaininterpolator.interpolator.(inputs...), 1, size(v, 2))
+    output = fastchaininterpolator.interpolator.(inputs...)
+    @show output
+    output
 end
 DiffEqFlux.initial_params(::FastChainInterpolator) = Float64[]
 
@@ -176,6 +177,7 @@ function generate_sim_model_and_test(model::M; current_input=false, output_dir=n
             range(Interval(iv_grid[1] / iv_scale, iv_grid[end] / iv_scale), length(iv_grid))
         end
         dv_grid = permutedims(reshape(dv_pybamm_interpolation_function[py_axis_name[num_deps + 1]], reverse(length.(iv_ranges))...), reverse(1:num_deps))
+        #dv_interpolation = (interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), iv_ranges...)
         dv_interpolation = FastChainInterpolator(scale(interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), iv_ranges...))
 
         dv_fastchain = FastChain(dv_interpolation)

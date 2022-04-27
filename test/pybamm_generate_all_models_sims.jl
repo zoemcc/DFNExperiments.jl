@@ -1,4 +1,4 @@
-rebuild = true
+rebuild = false
 if rebuild
     ENV["PYTHON"] = joinpath(ENV["ANACONDA_LOCATION"], "envs", "pybamm_dev", "bin", "python")
     using Pkg
@@ -12,7 +12,8 @@ begin
     using ModelingToolkit, Symbolics, DomainSets
     import ModelingToolkit: Interval, infimum, supremum
     using IterTools
-    using Infiltrator
+    using Term
+    #using Infiltrator
 end
 
 begin 
@@ -42,6 +43,23 @@ begin
         # solcsn(t=0.15930183773127454 * solcsn.timescale, r=1.0*solcsn.length_scales["negative particle size"], x=-100.0)
     end
 end
+
+t = 0.1
+ts = range(pde_system.domain[1].domain, length=100)
+xs = range(pde_system.domain[4].domain, length=100)
+xs = range(start=0.6,stop=0.7, length=100)
+t = ts[1]
+txs = vcat(fill(t, 100)', xs')
+eps_c_es = vec(dvs_interpolation[4](txs, Float64[]))
+plot(xs, eps_c_es)
+anim = @animate for i in 1:length(ts)
+    t = ts[i]
+    txs = vcat(fill(t, 100)', xs')
+    eps_c_es = vec(dvs_interpolation[4](txs, Float64[]))
+    plot(xs, eps_c_es)
+end
+gif(anim, "gifs/spme_interp.gif",fps=30)
+nothing
 """
 #@named modded_pde_system = PDESystem(pde_system.eqs, pde_system.bcs, pde_system.domain[[1,3,2]], pde_system.ivs[[1,3,2]], pde_system.dvs)
 #@named modded_pde_system = PDESystem([pde_system.dvs[1] ~ pde_system.dvs[1]], pde_system.bcs, pde_system.domain, pde_system.ivs, pde_system.dvs)
