@@ -64,6 +64,19 @@ spme:
     yes, that works!  the loss is still pretty bad on the interpolation though.  can I have it use the sub-interpolations for each of the regions??
         this might be a micro optimization, should get it running on supercloud first.
 
+things to do to get it to run on supercloud:
+    make it run locally:
+        !keep the same data format for now but make it use interpolated high resolution values instead of the entire high resolution blob
+        make sure it works with the c_e versus eps_c_e change
+        add abs(error) to the error plot, it's more useful (can still plot regular error too)
+        remove the log printouts
+        run it for a lil bit to make sure it can do a cycle or two
+        make a slurm-style script
+    make it run on cloud:
+        update julia packages
+        download DFNExperiments & the slurm folder
+        run hyperparameter experiment via slurm launcher
+
 !make pybamm spit out the indvars in the same order each time
 
 SPMnoR: why is it outputting an @ ??? this is a very simple model, maybe it's not reading the variable number correctly.

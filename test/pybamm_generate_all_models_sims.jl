@@ -20,7 +20,7 @@ begin
     ev = Float64[]
     #models = [SPMModel(), SPMeModel()]
     all_models = [SPMnoRModel(), SPMModel(), ReducedCModel(), SPMeModel(), ReducedCPhiModel(), ReducedCPhiJModel(), DFNnoRModel(), DFNModel()]
-    num_pts = 4000
+    num_pts = 100
     #all_models = [ReducedCModel(), SPMeModel(), ReducedCPhiModel(), ReducedCPhiJModel(), DFNnoRModel(), DFNModel()]
     model = all_models[4]
     #for model in all_models
@@ -35,7 +35,8 @@ begin
         sim_data, pde_system, sim, variables, independent_variables_to_pybamm_names, 
             dependent_variables_to_pybamm_names, dependent_variables_to_dependencies, dvs_interpolation,
             dvs_fastchain, prob, total_loss, modded_pde_system, symb_modded_pde_system = 
-            generate_sim_model_and_test(model; current_input=current_input, output_dir=output_dir, num_pts=num_pts)
+                generate_sim_model_and_test(model; current_input=current_input, output_dir=output_dir, num_pts=num_pts,
+                    large_interp_grid_length=100, small_interp_grid_length=100)
         nothing
         #include(model_file)
         #solvars = [sim.solution.__getitem__(var) for var in variables]
