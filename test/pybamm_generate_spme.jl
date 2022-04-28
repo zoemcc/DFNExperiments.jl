@@ -24,13 +24,32 @@ end
 begin 
     model = SPMeModel()
     hyperseed = 1
-    num_experiments = 120
-    start_experiment = 1
+    num_experiments = 128
+    if haskey(ENV, "SLURM_ARRAY_TASK_ID")
+        task_id = ENV["SLURM_ARRAY_TASK_ID"]
+        num_tasks = ENV["SLURM_ARRAY_TASK_COUNT"]
+        @show task_id
+        @show num_tasks
+        num_hyperparameters_per_task = Int(ceil(num_hyperparameters/num_tasks))
+        @show num_hyperparameters_per_task
+        hyperparameter_indices_to_compute = range((task_id - 1) * num_hyperparameters_per_task + 1, min(task_id * num_hyperparameters_per_task, num_hyperparameters))
+        @show hyperparameter_indices_to_compute
+        start_experiment = hyperparameter_indices_to_compute[1]
+        endat = hyperparameter_indices_to_compute[end]
+    else
+        start_experiment = 1
+        endat = num_experiments
+    end
     plot_frequency = 5_000
     log_frequency = 1_000
     checkpoint_frequency = 5_000
     iterations = 400_000
     log_string = "spme_c_e"
+    if haskey(ENV, "LOG_DIR")
+        log_dir = ENV["LOG_DIR"]
+    else
+        log_dir = abspath(joinpath(@__DIR__, "..", "logs", log_string))
+    end
     distributed = false
 
     hyperparameter_generator = StructGenerator(
@@ -68,7 +87,7 @@ function main(model, hyperparameter_generator, hyperseed, num_experiments, start
     pde_system = load_model(model)
     hyperparametersweep = StructGeneratorHyperParameterSweep(hyperseed, num_experiments, hyperparameter_generator)
     hyperparameters = generate_hyperparameters(hyperparametersweep)
-    log_options = NeuralPDE.LogOptions(;plot_function=get_plot_function(model), log_dir=abspath(joinpath(@__DIR__, "..", "logs", log_string)), 
+    log_options = NeuralPDE.LogOptions(;plot_function=get_plot_function(model), log_dir=log_dir, 
         log_frequency=log_frequency, plot_frequency=plot_frequency, checkpoint_frequency=checkpoint_frequency)
     neuralpde_workers = map(NeuralPDE.NeuralPDEWorker, workers())
     experiment_manager = NeuralPDE.ExperimentManager(pde_system, hyperparameters, get_cb_func(model, log_frequency), log_options, neuralpde_workers)
@@ -77,5 +96,5 @@ function main(model, hyperparameter_generator, hyperseed, num_experiments, start
     NeuralPDE.run_experiment_queue(experiment_manager; remote=false, startat=start_experiment, endat=endat, distributed=distributed)
 end
 
-main(model, hyperparameter_generator, hyperseed, num_experiments, start_experiment, num_experiments, plot_frequency, log_frequency, checkpoint_frequency, distributed)
+main(model, hyperparameter_generator, hyperseed, num_experiments, start_experiment, endat, plot_frequency, log_frequency, checkpoint_frequency, distributed)
 nothing

@@ -67,13 +67,16 @@ spme:
 things to do to get it to run on supercloud:
     make it run locally:
         !keep the same data format for now but make it use interpolated high resolution values instead of the entire high resolution blob
-        make sure it works with the c_e versus eps_c_e change
-        add abs(error) to the error plot, it's more useful (can still plot regular error too)
-        remove the log printouts
-        run it for a lil bit to make sure it can do a cycle or two
-        make a slurm-style script
+        !make sure it works with the c_e versus eps_c_e change
+        !add abs(error) to the error plot, it's more useful (can still plot regular error too)
+        !remove the log printouts
+        !run it for a lil bit to make sure it can do a cycle or two
+        !added endat semantics to run a slice of the hyperparameter experiments
+        !added a serial queue mode for experiment manager
+        !make a slurm-style script !(made it able to run serial)
     make it run on cloud:
         update julia packages
+        update the NeuralPDE git repo
         download DFNExperiments & the slurm folder
         run hyperparameter experiment via slurm launcher
 
