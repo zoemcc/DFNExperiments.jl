@@ -20,7 +20,10 @@ begin
     ev = Float64[]
     #models = [SPMModel(), SPMeModel()]
     all_models = [SPMnoRModel(), SPMModel(), ReducedCModel(), SPMeModel(), ReducedCPhiModel(), ReducedCPhiJModel(), DFNnoRModel(), DFNModel()]
-    num_pts = 100
+    num_pts = 4000
+    large_interp_grid_lengths = 1000
+    small_interp_grid_length = 100
+    num_stochastic_samples_from_loss = 1024
     #all_models = [ReducedCModel(), SPMeModel(), ReducedCPhiModel(), ReducedCPhiJModel(), DFNnoRModel(), DFNModel()]
     model = all_models[4]
     #for model in all_models
@@ -36,7 +39,9 @@ begin
             dependent_variables_to_pybamm_names, dependent_variables_to_dependencies, dvs_interpolation,
             dvs_fastchain, prob, total_loss, modded_pde_system, symb_modded_pde_system = 
                 generate_sim_model_and_test(model; current_input=current_input, output_dir=output_dir, num_pts=num_pts,
-                    large_interp_grid_length=100, small_interp_grid_length=100)
+                    large_interp_grid_length=large_interp_grid_lengths, small_interp_grid_length=small_interp_grid_length,
+                    num_stochastic_samples_from_loss=num_stochastic_samples_from_loss
+                    )
         nothing
         #include(model_file)
         #solvars = [sim.solution.__getitem__(var) for var in variables]

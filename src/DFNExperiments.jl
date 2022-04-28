@@ -1,5 +1,6 @@
 module DFNExperiments
 
+using Requires
 using DiffEqFlux, Flux
 using NeuralPDE, ModelingToolkit, Symbolics, DomainSets
 import ModelingToolkit: Interval, infimum, supremum
@@ -7,7 +8,6 @@ using LabelledArrays
 using Interpolations
 using JSON
 using IterTools
-using PyCall
 using IfElse
 using Plots, LinearAlgebra, TensorBoardLogger
 
@@ -76,7 +76,131 @@ pybamm_func_str(spm::DFNModel) = "dfn"
 include("generate_py.jl")
 
 function __init__()
-    initialize_pybamm_funcs()
+    @require PyCall="438e738f-606a-5dbb-bf0a-cddfbfd45ab0" begin 
+        initialize_pybamm_funcs()
+        function generate_sim_model_and_test(model::M; current_input=false, output_dir=nothing, num_pts=100, 
+                large_interp_grid_length=1000, small_interp_grid_length=100, num_stochastic_samples_from_loss=1024) where {M <: AbstractPyBaMMModel}
+            model_str = pybamm_func_str(model)
+            current_input_str = current_input ? "True" : "False" 
+            sim, mtk_str, variables = py"solve_plot_generate(*$$(model_str)(), current_input=$$(current_input_str), num_pts=$$(num_pts))"
+
+            if typeof(output_dir) <: AbstractString
+                if !isdir(output_dir)
+                    mkpath(output_dir)
+                end
+                model_filename = joinpath(output_dir, "model.jl")
+            else
+                model_filename = Base.tempname()
+            end
+
+            open(model_filename, "w") do f
+                write(f, mtk_str)
+            end
+            include(model_filename)
+
+            sol_data_json = sim.solution.save_data(variables=variables, to_format="json")
+            sol_data = JSON.parse(sol_data_json)
+
+            iv_names = nameof.(pde_system.ivs)
+            @show iv_names
+            @show independent_variables_to_pybamm_names
+            dv_names = nameof.(pde_system.dvs)
+            @show dv_names
+            @show dependent_variables_to_pybamm_names
+            @show keys(sol_data)
+
+            dvs_interpolation_fastchain_datablob = map(dep_vars) do dv
+                dv_pybamm_name = dependent_variables_to_pybamm_names[nameof(dv)]
+                dv_processed = sim.solution.__getitem__(dv_pybamm_name)
+                dv_pybamm_interpolation_function = dv_processed._interpolation_function
+                deps = dependent_variables_to_dependencies[nameof(dv)]
+                num_deps = length(deps)
+                py_axis_name = (:x, :y, :z)
+                function iv_ranges_from_grid_length(grid_length)
+                    iv_ranges = map(1:num_deps) do i
+                        iv = deps[i]
+                        iv_pybamm_name = independent_variables_to_pybamm_names[iv]
+                        iv_axis_name = py_axis_name[i]
+                        iv_grid = dv_pybamm_interpolation_function[iv_axis_name]
+                        # assume time is first
+                        iv_scale = i == 1 ? dv_processed.timescale : dv_processed.length_scales[iv_pybamm_name]
+                        unscaled_iv_range = range(Interval(iv_grid[1], iv_grid[end]), grid_length)
+                        scaled_iv_range = range(Interval(iv_grid[1] / iv_scale, iv_grid[end] / iv_scale), grid_length)
+                        (unscaled_iv_range, scaled_iv_range)
+                    end
+                    unscaled_iv_ranges, scaled_iv_ranges = unzip(iv_ranges)
+                end
+                unscaled_iv_ranges, scaled_iv_ranges = iv_ranges_from_grid_length(large_interp_grid_length)
+
+                unscaled_ivs_mat = reduce(hcat, map(collect, vec(collect(product(unscaled_iv_ranges...)))))
+                dv_pybamm_interpolator = FastChainInterpolator(dv_pybamm_interpolation_function)
+                dv_mat = first.(dv_pybamm_interpolator(unscaled_ivs_mat, Float64[]))
+                dv_grid = reshape(dv_mat, fill(large_interp_grid_length, num_deps)...)
+                #dv_grid = permutedims(reshape(dv_pybamm_interpolation_function[py_axis_name[num_deps + 1]], reverse(length.(iv_ranges))...), reverse(1:num_deps))
+                dv_interpolation = FastChainInterpolator(scale(interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), scaled_iv_ranges...))
+
+                dv_fastchain = FastChain(dv_interpolation)
+                unscaled_iv_ranges_small, scaled_iv_ranges_small = iv_ranges_from_grid_length(small_interp_grid_length)
+                scaled_ivs_small_mat = reduce(hcat, map(collect, vec(collect(product(scaled_iv_ranges_small...)))))
+                dv_data_blob = reshape(dv_fastchain(scaled_ivs_small_mat, Float64[]), (length.(scaled_iv_ranges_small))...)
+
+                (dv_interpolation, dv_fastchain, dv_data_blob)
+            end
+
+            ivs_range = map(pde_system.domain) do var_domain
+                domain = var_domain.domain
+                iv_range = range(domain, small_interp_grid_length)
+            end
+            @show ivs_range
+            @show typeof(ivs_range)
+
+            dvs_interpolation, dvs_fastchain, dvs_data_blob = unzip(dvs_interpolation_fastchain_datablob)
+            @show size(dvs_data_blob)
+            @show typeof(dvs_data_blob)
+
+            sim_data = Dict(
+                :ivs => Dict(
+                    :names => iv_names,
+                    :data => collect.(ivs_range),
+                ),
+                :dvs => Dict(
+                    :names => dv_names,
+                    :deps => [collect(dependent_variables_to_dependencies[dv_name]) for dv_name in dv_names], 
+                    :data => dvs_data_blob,
+                ) 
+            )
+
+            if typeof(output_dir) <: AbstractString
+                sim_filename = joinpath(output_dir, "sim.json")
+            else
+                sim_filename = Base.tempname()
+            end
+
+            open(sim_filename, "w") do f
+                JSON.print(f, sim_data)
+            end
+            sim_data_nt = read_sim_data(sim_filename)
+
+            @named modded_pde_system = PDESystem(pde_system.eqs[[4]], pde_system.bcs[[1]], pde_system.domain, pde_system.ivs, pde_system.dvs)
+            strategy =  NeuralPDE.StochasticTraining(1024, 1024)
+            discretization = NeuralPDE.PhysicsInformedNN(dvs_fastchain, strategy)
+            symb_modded_pde_system = NeuralPDE.symbolic_discretize(modded_pde_system, discretization)
+            prob = NeuralPDE.discretize(modded_pde_system, discretization)
+            total_loss = prob.f(Float64[], Float64[])
+
+
+            (sim_data=sim_data_nt, pde_system=pde_system, sim=sim, variables=variables, 
+            independent_variables_to_pybamm_names=independent_variables_to_pybamm_names, 
+            dependent_variables_to_pybamm_names=dependent_variables_to_pybamm_names,
+            dependent_variables_to_dependencies=dependent_variables_to_dependencies,
+            dvs_interpolation=dvs_interpolation,
+            dvs_fastchain=dvs_fastchain,
+            prob=prob,
+            total_loss=total_loss,
+            modded_pde_system=modded_pde_system,
+            symb_modded_pde_system=symb_modded_pde_system)
+        end
+    end
 end
 
 include("plot_log.jl")
@@ -95,128 +219,6 @@ end
 DiffEqFlux.initial_params(::FastChainInterpolator) = Float64[]
 
 
-function generate_sim_model_and_test(model::M; current_input=false, output_dir=nothing, num_pts=100, 
-        large_interp_grid_length=1000, small_interp_grid_length=100) where {M <: AbstractPyBaMMModel}
-    model_str = pybamm_func_str(model)
-    current_input_str = current_input ? "True" : "False" 
-    sim, mtk_str, variables = py"solve_plot_generate(*$$(model_str)(), current_input=$$(current_input_str), num_pts=$$(num_pts))"
-
-    if typeof(output_dir) <: AbstractString
-        if !isdir(output_dir)
-            mkpath(output_dir)
-        end
-        model_filename = joinpath(output_dir, "model.jl")
-    else
-        model_filename = Base.tempname()
-    end
-
-    open(model_filename, "w") do f
-        write(f, mtk_str)
-    end
-    include(model_filename)
-
-    sol_data_json = sim.solution.save_data(variables=variables, to_format="json")
-    sol_data = JSON.parse(sol_data_json)
-
-    iv_names = nameof.(pde_system.ivs)
-    @show iv_names
-    @show independent_variables_to_pybamm_names
-    dv_names = nameof.(pde_system.dvs)
-    @show dv_names
-    @show dependent_variables_to_pybamm_names
-    @show keys(sol_data)
-
-    dvs_interpolation_fastchain_datablob = map(dep_vars) do dv
-        dv_pybamm_name = dependent_variables_to_pybamm_names[nameof(dv)]
-        dv_processed = sim.solution.__getitem__(dv_pybamm_name)
-        dv_pybamm_interpolation_function = dv_processed._interpolation_function
-        deps = dependent_variables_to_dependencies[nameof(dv)]
-        num_deps = length(deps)
-        py_axis_name = (:x, :y, :z)
-        function iv_ranges_from_grid_length(grid_length)
-            iv_ranges = map(1:num_deps) do i
-                iv = deps[i]
-                iv_pybamm_name = independent_variables_to_pybamm_names[iv]
-                iv_axis_name = py_axis_name[i]
-                iv_grid = dv_pybamm_interpolation_function[iv_axis_name]
-                # assume time is first
-                iv_scale = i == 1 ? dv_processed.timescale : dv_processed.length_scales[iv_pybamm_name]
-                unscaled_iv_range = range(Interval(iv_grid[1], iv_grid[end]), grid_length)
-                scaled_iv_range = range(Interval(iv_grid[1] / iv_scale, iv_grid[end] / iv_scale), grid_length)
-                (unscaled_iv_range, scaled_iv_range)
-            end
-            unscaled_iv_ranges, scaled_iv_ranges = unzip(iv_ranges)
-        end
-        unscaled_iv_ranges, scaled_iv_ranges = iv_ranges_from_grid_length(large_interp_grid_length)
-
-        unscaled_ivs_mat = reduce(hcat, map(collect, vec(collect(product(unscaled_iv_ranges...)))))
-        dv_pybamm_interpolator = FastChainInterpolator(dv_pybamm_interpolation_function)
-        dv_mat = first.(dv_pybamm_interpolator(unscaled_ivs_mat, Float64[]))
-        dv_grid = reshape(dv_mat, fill(large_interp_grid_length, num_deps)...)
-        #dv_grid = permutedims(reshape(dv_pybamm_interpolation_function[py_axis_name[num_deps + 1]], reverse(length.(iv_ranges))...), reverse(1:num_deps))
-        dv_interpolation = FastChainInterpolator(scale(interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), scaled_iv_ranges...))
-
-        dv_fastchain = FastChain(dv_interpolation)
-        unscaled_iv_ranges_small, scaled_iv_ranges_small = iv_ranges_from_grid_length(small_interp_grid_length)
-        scaled_ivs_small_mat = reduce(hcat, map(collect, vec(collect(product(scaled_iv_ranges_small...)))))
-        dv_data_blob = reshape(dv_fastchain(scaled_ivs_small_mat, Float64[]), (length.(scaled_iv_ranges_small))...)
-
-        (dv_interpolation, dv_fastchain, dv_data_blob)
-    end
-
-    ivs_range = map(pde_system.domain) do var_domain
-        domain = var_domain.domain
-        iv_range = range(domain, small_interp_grid_length)
-    end
-    @show ivs_range
-    @show typeof(ivs_range)
-
-    dvs_interpolation, dvs_fastchain, dvs_data_blob = unzip(dvs_interpolation_fastchain_datablob)
-    @show size(dvs_data_blob)
-    @show typeof(dvs_data_blob)
-
-    sim_data = Dict(
-        :ivs => Dict(
-            :names => iv_names,
-            :data => collect.(ivs_range),
-        ),
-        :dvs => Dict(
-            :names => dv_names,
-            :deps => [collect(dependent_variables_to_dependencies[dv_name]) for dv_name in dv_names], 
-            :data => dvs_data_blob,
-        ) 
-    )
-
-    if typeof(output_dir) <: AbstractString
-        sim_filename = joinpath(output_dir, "sim.json")
-    else
-        sim_filename = Base.tempname()
-    end
-
-    open(sim_filename, "w") do f
-        JSON.print(f, sim_data)
-    end
-    sim_data_nt = read_sim_data(sim_filename)
-
-    @named modded_pde_system = PDESystem(pde_system.eqs[[4]], pde_system.bcs[[1]], pde_system.domain, pde_system.ivs, pde_system.dvs)
-    strategy =  NeuralPDE.StochasticTraining(1024, 1024)
-    discretization = NeuralPDE.PhysicsInformedNN(dvs_fastchain, strategy)
-    symb_modded_pde_system = NeuralPDE.symbolic_discretize(modded_pde_system, discretization)
-    prob = NeuralPDE.discretize(modded_pde_system, discretization)
-    total_loss = prob.f(Float64[], Float64[])
-
-
-    (sim_data=sim_data_nt, pde_system=pde_system, sim=sim, variables=variables, 
-    independent_variables_to_pybamm_names=independent_variables_to_pybamm_names, 
-    dependent_variables_to_pybamm_names=dependent_variables_to_pybamm_names,
-    dependent_variables_to_dependencies=dependent_variables_to_dependencies,
-    dvs_interpolation=dvs_interpolation,
-    dvs_fastchain=dvs_fastchain,
-    prob=prob,
-    total_loss=total_loss,
-    modded_pde_system=modded_pde_system,
-    symb_modded_pde_system=symb_modded_pde_system)
-end
 
 function read_sim_data(output_dir_or_file::AbstractString)
     # either the folder that contains the file or the file itself is acceptable input

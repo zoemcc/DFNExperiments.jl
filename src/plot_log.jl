@@ -68,12 +68,13 @@ function get_plot_function(model)
             res = eval_network_at_sim_data(θ)
             eval_plots = map(i->(name="$(string(dvs[i]))_nn", image=do_plot(res[:network_evals][i], iv_data, dv_deps[i], "$(string(dvs[i]))_nn")), 1:num_dvs)
             error_plots = map(i->(name="$(string(dvs[i]))_error", image=do_plot(res[:errors][i], iv_data, dv_deps[i], "$(string(dvs[i]))_error")), 1:num_dvs)
+            abs_error_plots = map(i->(name="$(string(dvs[i]))_abs_error", image=do_plot(abs.(res[:errors][i]), iv_data, dv_deps[i], "$(string(dvs[i]))_abs_error")), 1:num_dvs)
 
             if !(have_given_pybamm_plots[1])
                 have_given_pybamm_plots[1] = true
-                vcat(pybamm_plots, eval_plots, error_plots)
+                vcat(pybamm_plots, eval_plots, error_plots, abs_error_plots)
             else
-                vcat(eval_plots, error_plots)
+                vcat(eval_plots, error_plots, abs_error_plots)
             end
         end
         return plot_function

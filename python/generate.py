@@ -302,4 +302,4 @@ def solve_plot_generate(model, variables, current_input=False, num_pts=100):
     return sim, mtk_str, variables
 
 
-solve_plot_generate(*spme())
+#solve_plot_generate(*spme())
