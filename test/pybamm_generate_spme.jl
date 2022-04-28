@@ -1,4 +1,5 @@
 begin
+    using Pkg
     Pkg.activate(abspath(joinpath(@__DIR__, "..")))
     using Distributed
     NUM_WORKERS = 0
@@ -19,6 +20,7 @@ end
     using DFNExperiments, NeuralPDE
     using ModelingToolkit, Symbolics, DomainSets
     import ModelingToolkit: Interval, infimum, supremum
+    using IfElse
 end
 
 begin 
@@ -26,13 +28,13 @@ begin
     hyperseed = 1
     num_experiments = 128
     if haskey(ENV, "SLURM_ARRAY_TASK_ID")
-        task_id = ENV["SLURM_ARRAY_TASK_ID"]
-        num_tasks = ENV["SLURM_ARRAY_TASK_COUNT"]
+        task_id = parse(Int, ENV["SLURM_ARRAY_TASK_ID"])
+        num_tasks = parse(Int, ENV["SLURM_ARRAY_TASK_COUNT"])
         @show task_id
         @show num_tasks
-        num_hyperparameters_per_task = Int(ceil(num_hyperparameters/num_tasks))
+        num_hyperparameters_per_task = Int(ceil(num_experiments/num_tasks))
         @show num_hyperparameters_per_task
-        hyperparameter_indices_to_compute = range((task_id - 1) * num_hyperparameters_per_task + 1, min(task_id * num_hyperparameters_per_task, num_hyperparameters))
+        hyperparameter_indices_to_compute = range((task_id - 1) * num_hyperparameters_per_task + 1, min(task_id * num_hyperparameters_per_task, num_experiments))
         @show hyperparameter_indices_to_compute
         start_experiment = hyperparameter_indices_to_compute[1]
         endat = hyperparameter_indices_to_compute[end]

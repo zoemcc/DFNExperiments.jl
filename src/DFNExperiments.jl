@@ -82,7 +82,7 @@ function __init__()
                 large_interp_grid_length=1000, small_interp_grid_length=100, num_stochastic_samples_from_loss=1024) where {M <: AbstractPyBaMMModel}
             model_str = pybamm_func_str(model)
             current_input_str = current_input ? "True" : "False" 
-            sim, mtk_str, variables = py"solve_plot_generate(*$$(model_str)(), current_input=$$(current_input_str), num_pts=$$(num_pts))"
+            #sim, mtk_str, variables = py"solve_plot_generate(*$$(model_str)(), current_input=$$(current_input_str), num_pts=$$(num_pts))"
 
             if typeof(output_dir) <: AbstractString
                 if !isdir(output_dir)
