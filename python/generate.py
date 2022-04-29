@@ -180,16 +180,16 @@ def reduced_c_phi_j():
             c_e_p.short_name = "c_e_p"
             c_e = pybamm.concatenation(c_e_n, c_e_s, c_e_p)
 
-            phi_e_n = pybamm.Variable("Electrolyte potential neg", "negative electrode")
-            phi_e_s = pybamm.Variable("Electrolyte potential sep", "separator")
-            phi_e_p = pybamm.Variable("Electrolyte potential pos", "positive electrode")
+            phi_e_n = pybamm.Variable("Negative electrolyte potential", "negative electrode")
+            phi_e_s = pybamm.Variable("Separator electrolyte potential", "separator")
+            phi_e_p = pybamm.Variable("Positive electrolyte potential", "positive electrode")
             phi_e_n.short_name = "phi_e_n"
             phi_e_s.short_name = "phi_e_s"
             phi_e_p.short_name = "phi_e_p"
             phi_e = pybamm.concatenation(phi_e_n, phi_e_s, phi_e_p)
 
-            phi_s_n = pybamm.Variable("Electrode potential neg", "negative electrode")
-            phi_s_p = pybamm.Variable("Electrode potential pos", "positive electrode")
+            phi_s_n = pybamm.Variable("Negative electrode potential", "negative electrode")
+            phi_s_p = pybamm.Variable("Positive electrode potential", "positive electrode")
             phi_s_n.short_name = "phi_s_n"
             phi_s_p.short_name = "phi_s_p"
 
@@ -241,8 +241,11 @@ def reduced_c_phi_j():
     return model, variables
 
 
-def solve_plot_generate(model, variables, current_input=False, num_pts=100):
-    common_vars = ["Time", "x", "x_n", "x_p", "r_n", "r_p", "Discharge capacity [A.h]"]
+def solve_plot_generate(model, variables, current_input=False, include_q=True, num_pts=100):
+    if include_q:
+        common_vars = ["Time", "x", "x_n", "x_p", "r_n", "r_p", "Discharge capacity [A.h]"]
+    else:
+        common_vars = ["Time", "x", "x_n", "x_p", "r_n", "r_p"]
     variables = list(set(common_vars + variables))
     dep_vars = [x for x in variables if x not in common_vars]
 

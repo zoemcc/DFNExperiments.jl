@@ -75,10 +75,10 @@ things to do to get it to run on supercloud:
         !added a serial queue mode for experiment manager
         !make a slurm-style script !(made it able to run serial)
     make it run on cloud:
-        update julia packages
-        update the NeuralPDE git repo
-        download DFNExperiments & the slurm folder
-        run hyperparameter experiment via slurm launcher
+        !update julia packages
+        !update the NeuralPDE git repo
+        !download DFNExperiments & the slurm folder
+        !run hyperparameter experiment via slurm launcher
 
 !make pybamm spit out the indvars in the same order each time
 
