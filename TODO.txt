@@ -64,8 +64,8 @@ spme:
     yes, that works!  the loss is still pretty bad on the interpolation though.  can I have it use the sub-interpolations for each of the regions??
         this might be a micro optimization, should get it running on supercloud first.
 
-things to do to get it to run on supercloud:
-    make it run locally:
+!things to do to get it to run on supercloud:
+    !make it run locally:
         !keep the same data format for now but make it use interpolated high resolution values instead of the entire high resolution blob
         !make sure it works with the c_e versus eps_c_e change
         !add abs(error) to the error plot, it's more useful (can still plot regular error too)
@@ -74,7 +74,7 @@ things to do to get it to run on supercloud:
         !added endat semantics to run a slice of the hyperparameter experiments
         !added a serial queue mode for experiment manager
         !make a slurm-style script !(made it able to run serial)
-    make it run on cloud:
+    !make it run on cloud:
         !update julia packages
         !update the NeuralPDE git repo
         !download DFNExperiments & the slurm folder
@@ -83,8 +83,18 @@ things to do to get it to run on supercloud:
 !make pybamm spit out the indvars in the same order each time
 
 SPMnoR: why is it outputting an @ ??? this is a very simple model, maybe it's not reading the variable number correctly.
-ReducedC: it wants to get the 'Discharge capacity [A.h]' (Q_Ah in other models) but the sim doesn't want to include that. can I pass in only the sim 
-    variables to the sim object? currently the variables I pass in is a superset (just whatever variables the pycall generation script passes back to me)
+!ReducedC: it wants to get the 'Discharge capacity [A.h]' (Q_Ah in other models) but the sim doesn't want to include that. can I pass in only the sim 
+    !variables to the sim object? currently the variables I pass in is a superset (just whatever variables the pycall generation script passes back to me)
+    !added a variable about whether to include Q or not
+
+DFN blocks:
+    figure out integration domain of each equation and then use the correct variable there. this might interfere with the interpolators? can I just set it to extrapolation is fine so I don't get all the domain errors?
+        !extrapolation handled by wrapping in an extrapolation() interpolation struct
+        handle the x / xn / xp discrepancy again. I think last time I just put the variable that corresponded to the integration domain of the equation in there? 
+            so how do I figure that out programmatically. 
+            so the correct way to do this is to define "subdomains" and integration domains for each equation.  
+                we can default to having 
+    figure out saving 3d blobs for reuse and plotting 3d blobs (basically just make sure both work still)
 
 
 add kwargs handling to StructGenerator
@@ -92,9 +102,7 @@ then start integration with the other models and fix errors/ expand design as th
 
 collapse the concatenation terms so that it's just one concatenation term and then all the logic is combined so we only have to do one ifelse per equation
     (not strictly necessary but it would be a great optimization and for ease of understanding)
-    probably unnecessary now that the loss functions have a good test
+    !probably unnecessary now that the loss functions have a good test
 
-handle the x / xn / xp discrepancy again. I think last time I just put the variable that corresponded to the integration domain of the equation in there? 
-    so how do I figure that out programmatically. 
 
 

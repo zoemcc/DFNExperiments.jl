@@ -27,7 +27,11 @@ begin
     num_stochastic_samples_from_loss = 1024
     current_input = false
     #model = all_models[1]
-    for i in 1:5
+    #for i in 1:5
+    j = 5
+    i = j
+    #for i in j:j
+    begin
         model = all_models[i]
         include_q = DFNExperiments.include_q_model(model)
         models_dir = abspath(joinpath(@__DIR__, "..", "models"))
@@ -35,6 +39,7 @@ begin
         output_dir = joinpath(models_dir, "$(model_str)")
         model_file = joinpath(output_dir, "model.jl")
         loss_file = joinpath(output_dir, "loss_certificate.txt")
+        writemodel=false
 
         @show model
         #sim_data, pde_system, sim, variables = generate_sim_model(model; current_input=current_input, output_dir=output_dir, num_pts=num_pts)
@@ -43,13 +48,14 @@ begin
             dvs_fastchain, prob, total_loss, symb_modded_pde_system, discretization = 
                 generate_sim_model_and_test(model; current_input=current_input, include_q=include_q, output_dir=output_dir, num_pts=num_pts,
                     large_interp_grid_length=large_interp_grid_lengths, small_interp_grid_length=small_interp_grid_length,
-                    num_stochastic_samples_from_loss=num_stochastic_samples_from_loss
+                    num_stochastic_samples_from_loss=num_stochastic_samples_from_loss,
+                    writemodel=writemodel,
                     )
         nothing
-        example_loss = prob.f(ev,ev)
-        open(loss_file, "w") do f
-            print(f, string(example_loss))
-        end
+        #example_loss = prob.f(ev,ev)
+        #open(loss_file, "w") do f
+            #print(f, string(example_loss) * "\n")
+        #end
 
         #include(model_file)
         #solvars = [sim.solution.__getitem__(var) for var in variables]

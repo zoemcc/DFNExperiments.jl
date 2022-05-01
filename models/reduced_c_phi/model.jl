@@ -31,17 +31,17 @@ function concatenation(x, n, s, p)
    )
 end
 
-cache_8465239269301779922 = concatenation(x, 2.25, 0.0, -2.25)
-cache_7469405367862761164 = (Dx(Dx(u1(t, x)))) + cache_8465239269301779922
+cache_4457050546309239314 = concatenation(x, 2.25, 0.0, -2.25)
+cache_m4416472977406629345 = (Dx(Dx(u1(t, x)))) + cache_4457050546309239314
 
 # 'Electrolyte potential' equation
-cache_8465239269301779922 = concatenation(x, 2.25, 0.0, -2.25)
-cache_4489387205125235124 = (Dx(Dx(u1(t, x)) / u1(t, x) - Dx(u2(t, x)))) - cache_8465239269301779922
+cache_4457050546309239314 = concatenation(x, 2.25, 0.0, -2.25)
+cache_m1466633705168541415 = (Dx(Dx(u1(t, x)) / u1(t, x) - Dx(u2(t, x)))) - cache_4457050546309239314
 
 
 eqs = [
-   Dt(u1(t, x)) ~ cache_7469405367862761164,
-   0 ~ cache_4489387205125235124,
+   Dt(u1(t, x)) ~ cache_m4416472977406629345,
+   0 ~ cache_m1466633705168541415,
 ]
 
 

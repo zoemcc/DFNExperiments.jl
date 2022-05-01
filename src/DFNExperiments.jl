@@ -108,7 +108,7 @@ end
 DiffEqFlux.initial_params(::FastChainInterpolator) = Float64[]
 
 function generate_sim_model_and_test(model::M; current_input=false, include_q=true, output_dir=nothing, num_pts=100, 
-        large_interp_grid_length=1000, small_interp_grid_length=100, num_stochastic_samples_from_loss=1024) where {M <: AbstractPyBaMMModel}
+        large_interp_grid_length=1000, small_interp_grid_length=100, num_stochastic_samples_from_loss=1024, writemodel=true) where {M <: AbstractPyBaMMModel}
     model_str = pybamm_func_str(model)
     current_input_str = current_input ? "True" : "False" 
     include_q_str = include_q ? "True" : "False"
@@ -123,8 +123,11 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=tr
         model_filename = Base.tempname()
     end
 
-    open(model_filename, "w") do f
-        write(f, mtk_str)
+    @show writemodel
+    if writemodel
+        open(model_filename, "w") do f
+            write(f, mtk_str)
+        end
     end
     include(model_filename)
 
@@ -167,7 +170,7 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=tr
         dv_mat = first.(dv_pybamm_interpolator(unscaled_ivs_mat, Float64[]))
         dv_grid = reshape(dv_mat, fill(large_interp_grid_length, num_deps)...)
         #dv_grid = permutedims(reshape(dv_pybamm_interpolation_function[py_axis_name[num_deps + 1]], reverse(length.(iv_ranges))...), reverse(1:num_deps))
-        dv_interpolation = FastChainInterpolator(scale(interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), scaled_iv_ranges...))
+        dv_interpolation = FastChainInterpolator(extrapolate(scale(interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), scaled_iv_ranges...), Line()))
 
         dv_fastchain = FastChain(dv_interpolation)
         unscaled_iv_ranges_small, scaled_iv_ranges_small = iv_ranges_from_grid_length(small_interp_grid_length)
@@ -214,8 +217,10 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=tr
     strategy =  NeuralPDE.StochasticTraining(1024, 1024)
     discretization = NeuralPDE.PhysicsInformedNN(dvs_fastchain, strategy)
     symb_modded_pde_system = NeuralPDE.symbolic_discretize(pde_system, discretization)
-    prob = NeuralPDE.discretize(pde_system, discretization)
-    total_loss = prob.f(Float64[], Float64[])
+    #prob = NeuralPDE.discretize(pde_system, discretization)
+    prob = nothing
+    #total_loss = prob.f(Float64[], Float64[])
+    total_loss = nothing
 
 
     (sim_data=sim_data_nt, pde_system=pde_system, sim=sim, variables=variables, 

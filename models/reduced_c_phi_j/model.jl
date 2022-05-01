@@ -43,29 +43,37 @@ function concatenation(x, n, s, p)
    )
 end
 
-cache_m3635493204782592957 = concatenation(x, (u1(t, x) ^ 0.5) * (sinh((u3(t, x_n) - u2(t, x)) + 1.0)), 0.0, 
-   (u1(t, x) ^ 0.5) * (sinh((u4(t, x_p) - u2(t, x)) - 4.0))
+#cache_8017838820490660438 = concatenation(x, (u1(t, x) ^ 0.5) * (sinh((u3(t, x_n) - u2(t, x)) + 1.0)), 0.0, 
+   #(u1(t, x) ^ 0.5) * (sinh((u4(t, x_p) - u2(t, x)) - 4.0))
+#)
+cache_8017838820490660438 = concatenation(x, (u1(t, x) ^ 0.5) * (sinh((u3(t, x) - u2(t, x)) + 1.0)), 0.0, 
+   (u1(t, x) ^ 0.5) * (sinh((u4(t, x) - u2(t, x)) - 4.0))
 )
-cache_m2749800832276574413 = (Dx(Dx(u1(t, x)))) + cache_m3635493204782592957
+cache_4764846323173313089 = (Dx(Dx(u1(t, x)))) + cache_8017838820490660438
 
 # 'Electrolyte potential' equation
-cache_m3635493204782592957 = concatenation(x, (u1(t, x) ^ 0.5) * (sinh((u3(t, x_n) - u2(t, x)) + 1.0)), 0.0, 
-   (u1(t, x) ^ 0.5) * (sinh((u4(t, x_p) - u2(t, x)) - 4.0))
+#cache_8017838820490660438 = concatenation(x, (u1(t, x) ^ 0.5) * (sinh((u3(t, x_n) - u2(t, x)) + 1.0)), 0.0, 
+   #(u1(t, x) ^ 0.5) * (sinh((u4(t, x_p) - u2(t, x)) - 4.0))
+#)
+cache_8017838820490660438 = concatenation(x, (u1(t, x) ^ 0.5) * (sinh((u3(t, x) - u2(t, x)) + 1.0)), 0.0, 
+   (u1(t, x) ^ 0.5) * (sinh((u4(t, x) - u2(t, x)) - 4.0))
 )
-cache_m3428460094357991683 = (Dx(Dx(u1(t, x)) / u1(t, x) - Dx(u2(t, x)))) - cache_m3635493204782592957
+cache_3358561361070727352 = (Dx(Dx(u1(t, x)) / u1(t, x) - Dx(u2(t, x)))) - cache_8017838820490660438
 
 # 'Negative electrode potential' equation
-cache_8780628382691206560 = (Dx_n(Dx_n(u3(t, x_n)))) + ((u1(t, x) ^ 0.5) * (sinh((u3(t, x_n) - u2(t, x)) + 1.0)))
+#cache_m1434052808539415122 = (Dx_n(Dx_n(u3(t, x_n)))) + ((u1(t, x) ^ 0.5) * (sinh((u3(t, x_n) - u2(t, x)) + 1.0)))
+cache_m1434052808539415122 = (Dx_n(Dx_n(u3(t, x_n)))) + ((u1(t, x_n) ^ 0.5) * (sinh((u3(t, x_n) - u2(t, x_n)) + 1.0)))
 
 # 'Positive electrode potential' equation
-cache_m8645090668974339438 = (Dx_p(Dx_p(u4(t, x_p)))) + ((u1(t, x) ^ 0.5) * (sinh((u4(t, x_p) - u2(t, x)) - 4.0)))
+#cache_m3885295840502231583 = (Dx_p(Dx_p(u4(t, x_p)))) + ((u1(t, x) ^ 0.5) * (sinh((u4(t, x_p) - u2(t, x)) - 4.0)))
+cache_m3885295840502231583 = (Dx_p(Dx_p(u4(t, x_p)))) + ((u1(t, x_p) ^ 0.5) * (sinh((u4(t, x_p) - u2(t, x_p)) - 4.0)))
 
 
 eqs = [
-   Dt(u1(t, x)) ~ cache_m2749800832276574413,
-   0 ~ cache_m3428460094357991683,
-   0 ~ cache_8780628382691206560,
-   0 ~ cache_m8645090668974339438,
+   Dt(u1(t, x)) ~ cache_4764846323173313089,
+   0 ~ cache_3358561361070727352,
+   0 ~ cache_m1434052808539415122,
+   0 ~ cache_m3885295840502231583,
 ]
 
 
