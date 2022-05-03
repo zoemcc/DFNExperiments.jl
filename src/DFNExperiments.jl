@@ -115,7 +115,7 @@ end
 DiffEqFlux.initial_params(::FastChainInterpolator) = Float64[]
 
 function generate_sim_model_and_test(model::M; current_input=false, include_q=true, output_dir=nothing, num_pts=100, 
-        large_interp_grid_length=1000, small_interp_grid_length=100, num_stochastic_samples_from_loss=1024, writemodel=true) where {M <: AbstractPyBaMMModel}
+        large_interp_grid_length=1000, small_interp_grid_length=100, num_stochastic_samples_from_loss=1024, writemodel=true, writesimdata=true) where {M <: AbstractPyBaMMModel}
     model_str = pybamm_func_str(model)
     current_input_str = current_input ? "True" : "False" 
     include_q_str = include_q ? "True" : "False"
@@ -232,27 +232,43 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=tr
         sim_filename = Base.tempname()
     end
 
-    open(sim_filename, "w") do f
-        JSON.print(f, sim_data)
+    @show writesimdata
+    if writesimdata
+        open(sim_filename, "w") do f
+            JSON.print(f, sim_data)
+        end
     end
     sim_data_nt = read_sim_data(sim_filename)
 
     println("generating PINN discretization from the simulation interpolation to test against")
     strategy =  NeuralPDE.StochasticTraining(num_stochastic_samples_from_loss, num_stochastic_samples_from_loss)
     discretization = NeuralPDE.PhysicsInformedNN(dvs_fastchain, strategy)
+    
+    if !isdefined(DFNExperiments, :subdomain_relations)
+        DFNExperiments.subdomain_relations = nothing
+    end
+    if !isdefined(DFNExperiments, :eqs_integration_domains)
+        DFNExperiments.eqs_integration_domains = nothing
+    end
+    if !isdefined(DFNExperiments, :ics_bcs_integration_domains)
+        DFNExperiments.ics_bcs_integration_domains = nothing
+    end
+
     symb_modded_pde_system = NeuralPDE.symbolic_discretize(pde_system, discretization; 
-        subdomain_relations=subdomain_relations, 
-        eqs_integration_domains=eqs_integration_domains,
-        ics_bcs_integration_domains=ics_bcs_integration_domains,
+        subdomain_relations=DFNExperiments.subdomain_relations, 
+        eqs_integration_domains=DFNExperiments.eqs_integration_domains,
+        ics_bcs_integration_domains=DFNExperiments.ics_bcs_integration_domains,
     )
     prob = NeuralPDE.discretize(pde_system, discretization;
-        subdomain_relations=subdomain_relations, 
-        eqs_integration_domains=eqs_integration_domains,
-        ics_bcs_integration_domains=ics_bcs_integration_domains,
+        subdomain_relations=DFNExperiments.subdomain_relations, 
+        eqs_integration_domains=DFNExperiments.eqs_integration_domains,
+        ics_bcs_integration_domains=DFNExperiments.ics_bcs_integration_domains,
     )
-    #prob = nothing
+    @show DFNExperiments.subdomain_relations
+    @show DFNExperiments.eqs_integration_domains
+    @show DFNExperiments.ics_bcs_integration_domains
+
     total_loss = prob.f(Float64[], Float64[])
-    #total_loss = nothing
 
 
     (sim_data=sim_data_nt, pde_system=pde_system, sim=sim, variables=variables, 

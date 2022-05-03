@@ -42,8 +42,8 @@ begin
         ics_bcs_integration_domains=ics_bcs_integration_domains,
         #ics_bcs_integration_domains=[[:t, :x]],
     )
-    println(" ")
-    println(sym_prob)
+    #println(" ")
+    #println(sym_prob)
     #println(sym_prob.args[2].args[3].args[3])
 end
 prob = NeuralPDE.discretize(pde_system, discretization; 
