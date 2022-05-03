@@ -123,9 +123,41 @@ within neuralpde parser/transformer:
 get it to work within neuralpde first, then change the transpiler second 
     (less important, since I can manually add it for now. if I do it correctly, the loss_certificate should go down once I make the manual change and then I can automate it)
 
-    get it to run inside neuralpde, then piece it apart
-    get the info inside w/ kwargs
-    surgical changes
+    !get it to run inside neuralpde, 
+        then piece it apart
+    !get the info inside w/ kwargs
+        !symbolic_discretize first (make sure symbolic_loss_function accepts the right args and gets the integration domains correctly)
+        !discretize after (make sure it aligns with the symbolic_discretize version)
+    !surgical changes
+        !make the let (t, x_p, x, x_n) bit use the correct input
+        !within symbolic_loss:
+            !if integration domain is x_n and x and x_n are both in the eq, then do let x = cord[[index(x_n)], :]
+            !if integration domain is x and x and x_n are both in the eq, then do let x_n = cord[[index(x)], :]
+            !counting the cords in symbolic loss: generate eq_integration_domain if it's nothing, from the pairs, and use that instead
+        !outside of the symbolic loss:
+            !make sure that the bounds are derived from integration_domains, not the way they were before
+                !get_bounds for everything except for grid
+                    !prioritize this
+                    !lol it's dispatched on strategy, oops
+                    !prioritize stochastictraining
+
+                    !add a dispatch to get_argument that dispatches on eqs_integration_domains
+                    !tested for stochastic with printouts, might break actual tests tho
+                TODO: fill out get_bounds for quadraturetraining and generate_training_sets for gridstrategy
+                    what is the difference between get_variables and get_arguments? critical to understanding the difference between quadraturetraining and others
+                    generate_training_sets for grid
+        
+        !ok I think it's all done except BC handling is done incorrectly (gotta make sure the 0-dimensional BCs are fed in correctly, in the right spots)
+            !in get_argument(bc_args...)
+            !I handled this by putting the frozen dimensions into the integration domains for bcs too
+        !haven't tested this with the loss for certification yet tho
+            !cert is 10x lower than before at 0.5 ! I think that's low enough to qualify 
+
+    !reduced_c_phi_j works fully now
+
+    DFN_no_r
+
+    DFN
 
 
 why is the boundary/initial condition for phi_s_p different than the other ones? ic of 2 and bc of (0, 1) neumann

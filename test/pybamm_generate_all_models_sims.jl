@@ -40,6 +40,7 @@ begin
         model_file = joinpath(output_dir, "model.jl")
         loss_file = joinpath(output_dir, "loss_certificate.txt")
         writemodel=false
+        writeloss=true
 
         @show model
         #sim_data, pde_system, sim, variables = generate_sim_model(model; current_input=current_input, output_dir=output_dir, num_pts=num_pts)
@@ -52,10 +53,15 @@ begin
                     writemodel=writemodel,
                     )
         nothing
-        #example_loss = prob.f(ev,ev)
-        #open(loss_file, "w") do f
-            #print(f, string(example_loss) * "\n")
-        #end
+        if !isnothing(prob)
+            example_loss = prob.f(ev,ev)
+            @show example_loss
+            if writeloss
+                open(loss_file, "w") do f
+                    print(f, string(example_loss) * "\n")
+                end
+            end
+        end
 
         #include(model_file)
         #solvars = [sim.solution.__getitem__(var) for var in variables]

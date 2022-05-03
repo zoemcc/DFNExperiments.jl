@@ -216,11 +216,19 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=tr
 
     strategy =  NeuralPDE.StochasticTraining(1024, 1024)
     discretization = NeuralPDE.PhysicsInformedNN(dvs_fastchain, strategy)
-    symb_modded_pde_system = NeuralPDE.symbolic_discretize(pde_system, discretization)
-    #prob = NeuralPDE.discretize(pde_system, discretization)
-    prob = nothing
-    #total_loss = prob.f(Float64[], Float64[])
-    total_loss = nothing
+    symb_modded_pde_system = NeuralPDE.symbolic_discretize(pde_system, discretization; 
+        subdomain_relations=subdomain_relations, 
+        eqs_integration_domains=eqs_integration_domains,
+        ics_bcs_integration_domains=ics_bcs_integration_domains,
+    )
+    prob = NeuralPDE.discretize(pde_system, discretization;
+        subdomain_relations=subdomain_relations, 
+        eqs_integration_domains=eqs_integration_domains,
+        ics_bcs_integration_domains=ics_bcs_integration_domains,
+    )
+    #prob = nothing
+    total_loss = prob.f(Float64[], Float64[])
+    #total_loss = nothing
 
 
     (sim_data=sim_data_nt, pde_system=pde_system, sim=sim, variables=variables, 

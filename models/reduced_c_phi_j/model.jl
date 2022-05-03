@@ -43,30 +43,30 @@ function concatenation(x, n, s, p)
    )
 end
 
-#cache_8017838820490660438 = concatenation(x, (u1(t, x) ^ 0.5) * (sinh((u3(t, x_n) - u2(t, x)) + 1.0)), 0.0, 
-   #(u1(t, x) ^ 0.5) * (sinh((u4(t, x_p) - u2(t, x)) - 4.0))
-#)
-cache_8017838820490660438 = concatenation(x, (u1(t, x) ^ 0.5) * (sinh((u3(t, x) - u2(t, x)) + 1.0)), 0.0, 
-   (u1(t, x) ^ 0.5) * (sinh((u4(t, x) - u2(t, x)) - 4.0))
+cache_8017838820490660438 = concatenation(x, (u1(t, x) ^ 0.5) * (sinh((u3(t, x_n) - u2(t, x)) + 1.0)), 0.0, 
+   (u1(t, x) ^ 0.5) * (sinh((u4(t, x_p) - u2(t, x)) - 4.0))
 )
+#cache_8017838820490660438 = concatenation(x, (u1(t, x) ^ 0.5) * (sinh((u3(t, x) - u2(t, x)) + 1.0)), 0.0, 
+   #(u1(t, x) ^ 0.5) * (sinh((u4(t, x) - u2(t, x)) - 4.0))
+#)
 cache_4764846323173313089 = (Dx(Dx(u1(t, x)))) + cache_8017838820490660438
 
 # 'Electrolyte potential' equation
-#cache_8017838820490660438 = concatenation(x, (u1(t, x) ^ 0.5) * (sinh((u3(t, x_n) - u2(t, x)) + 1.0)), 0.0, 
-   #(u1(t, x) ^ 0.5) * (sinh((u4(t, x_p) - u2(t, x)) - 4.0))
-#)
-cache_8017838820490660438 = concatenation(x, (u1(t, x) ^ 0.5) * (sinh((u3(t, x) - u2(t, x)) + 1.0)), 0.0, 
-   (u1(t, x) ^ 0.5) * (sinh((u4(t, x) - u2(t, x)) - 4.0))
+cache_8017838820490660438 = concatenation(x, (u1(t, x) ^ 0.5) * (sinh((u3(t, x_n) - u2(t, x)) + 1.0)), 0.0, 
+   (u1(t, x) ^ 0.5) * (sinh((u4(t, x_p) - u2(t, x)) - 4.0))
 )
+#cache_8017838820490660438 = concatenation(x, (u1(t, x) ^ 0.5) * (sinh((u3(t, x) - u2(t, x)) + 1.0)), 0.0, 
+   #(u1(t, x) ^ 0.5) * (sinh((u4(t, x) - u2(t, x)) - 4.0))
+#)
 cache_3358561361070727352 = (Dx(Dx(u1(t, x)) / u1(t, x) - Dx(u2(t, x)))) - cache_8017838820490660438
 
 # 'Negative electrode potential' equation
-#cache_m1434052808539415122 = (Dx_n(Dx_n(u3(t, x_n)))) + ((u1(t, x) ^ 0.5) * (sinh((u3(t, x_n) - u2(t, x)) + 1.0)))
-cache_m1434052808539415122 = (Dx_n(Dx_n(u3(t, x_n)))) + ((u1(t, x_n) ^ 0.5) * (sinh((u3(t, x_n) - u2(t, x_n)) + 1.0)))
+cache_m1434052808539415122 = (Dx_n(Dx_n(u3(t, x_n)))) + ((u1(t, x) ^ 0.5) * (sinh((u3(t, x_n) - u2(t, x)) + 1.0)))
+#cache_m1434052808539415122 = (Dx_n(Dx_n(u3(t, x_n)))) + ((u1(t, x_n) ^ 0.5) * (sinh((u3(t, x_n) - u2(t, x_n)) + 1.0)))
 
 # 'Positive electrode potential' equation
-#cache_m3885295840502231583 = (Dx_p(Dx_p(u4(t, x_p)))) + ((u1(t, x) ^ 0.5) * (sinh((u4(t, x_p) - u2(t, x)) - 4.0)))
-cache_m3885295840502231583 = (Dx_p(Dx_p(u4(t, x_p)))) + ((u1(t, x_p) ^ 0.5) * (sinh((u4(t, x_p) - u2(t, x_p)) - 4.0)))
+cache_m3885295840502231583 = (Dx_p(Dx_p(u4(t, x_p)))) + ((u1(t, x) ^ 0.5) * (sinh((u4(t, x_p) - u2(t, x)) - 4.0)))
+#cache_m3885295840502231583 = (Dx_p(Dx_p(u4(t, x_p)))) + ((u1(t, x_p) ^ 0.5) * (sinh((u4(t, x_p) - u2(t, x_p)) - 4.0)))
 
 
 eqs = [
@@ -104,6 +104,33 @@ domains = [
    x in x_domain,
    x_n in x_n_domain,
    x_p in x_p_domain,
+]
+
+subdomain_relations = Dict(
+   :x_n => :x,
+   :x_p => :x,
+)
+
+eqs_integration_domains = [
+   [:t, :x,],
+   [:t, :x,],
+   [:t, :x_n,],
+   [:t, :x_p,],
+]
+
+ics_bcs_integration_domains = [
+   [0.0, :x,],
+   [0.0, :x,],
+   [0.0, :x_n,],
+   [0.0, :x_p,],
+   [:t, 0.0,],
+   [:t, 1.0,],
+   [:t, 0.0,],
+   [:t, 1.0,],
+   [:t, 0.0,],
+   [:t, 0.4444444444444445,],
+   [:t, 0.5555555555555556,],
+   [:t, 1.0,],
 ]
 
 ind_vars = [t, x, x_n, x_p]
