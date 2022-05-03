@@ -6,8 +6,8 @@ begin
     using IfElse
 end
 
-model = ReducedCPhiJModel()
-model_file = abspath(joinpath(@__DIR__, "..", "models", "reduced_c_phi_j", "model.jl"))
+model = DFNModel()
+model_file = abspath(joinpath(@__DIR__, "..", "models", "dfn", "model.jl"))
 include(model_file)
 
 pde_system
@@ -21,7 +21,7 @@ nn_spec = SimpleFeedForwardNetwork(
     GELUNonLin(),
     GlorotUniformParams()
 )
-nn_fc, init_params = NeuralPDE.getfunction(nn_spec, fill(2,4))
+nn_fc, init_params = NeuralPDE.getfunction(nn_spec, [1, 3, 3, 2, 2, 2, 2])
 flat_init_params = vcat(init_params...)
 
 dummy_eq = [u1(t,x) ~ u1(t,x)]
@@ -57,8 +57,12 @@ prob = NeuralPDE.discretize(pde_system, discretization;
 nothing
 # current error:
 # ERROR: BoundsError: attempt to access 2×16 Matrix{Float32} at index [[3], 1:16]
-bias_last_per = Float32.(fill(0.0, 33))
-bias_last_per[end] = 1.0
-biased_params_adder = repeat(bias_last_per, 4)
-prob.f(flat_init_params .+ biased_params_adder, Float32[]) 
+#bias_last_per = Float32.(fill(0.0, 33))
+#bias_last_per[end] = 1.0
+#biased_params_adder = repeat(bias_last_per, 4)
+#bias_adder = fill(1.0, )
+biased_params_adder = fill(1.0, size(flat_init_params, 1))
+params_sizes = length.(init_params)
+#prob.f(flat_init_params .+ biased_params_adder, Float32[]) 
+prob.f(flat_init_params, Float32[]) 
 nothing

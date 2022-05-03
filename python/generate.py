@@ -280,7 +280,7 @@ def solve_plot_generate(model, variables, current_input=False, include_q=True, n
     # Solve
     parameter_values._replace_callable_function_parameters = True
     sim = pybamm.Simulation(model, var_pts=var_pts, parameter_values=parameter_values)
-    sim.solve([0, 3600], inputs=inputs)
+    #sim.solve([0, 3600], inputs=inputs)
     #sim.mesh.add_ghost_meshes()
     pybamm.set_logging_level("INFO")
     sim.solve([0, 3600], inputs=inputs)

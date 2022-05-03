@@ -100,8 +100,15 @@ end
 function (fastchaininterpolator::FastChainInterpolator)(v, θ) 
     #println("in fastchaininterpolator")
     #@show v
-    inputs = [@view v[[i], :] for i in 1:size(v, 1)]
-    output = fastchaininterpolator.interpolator.(inputs...)
+    if size(v, 1) > 2
+        # this uses RegularGridInterpolator which is an ND interpolator so it expects a vector in
+        inputs = [v[:, i] for i in 1:size(v, 2)]
+        output = fastchaininterpolator.interpolator.(inputs)
+    else
+        # this uses 1-d or 2-d interpolators which expect a tuple of arguments
+        inputs = [@view v[[i], :] for i in 1:size(v, 1)]
+        output = fastchaininterpolator.interpolator.(inputs...)
+    end
     #@show output
     output
 end
@@ -131,8 +138,8 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=tr
     end
     include(model_filename)
 
-    sol_data_json = sim.solution.save_data(variables=variables, to_format="json")
-    sol_data = JSON.parse(sol_data_json)
+    #sol_data_json = sim.solution.save_data(variables=variables, to_format="json")
+    #sol_data = JSON.parse(sol_data_json)
 
     iv_names = nameof.(pde_system.ivs)
     @show iv_names
@@ -140,9 +147,10 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=tr
     dv_names = nameof.(pde_system.dvs)
     @show dv_names
     @show dependent_variables_to_pybamm_names
-    @show keys(sol_data)
+    #@show keys(sol_data)
 
     dvs_interpolation_fastchain_datablob = map(dep_vars) do dv
+        println("interpolating $(nameof(dv))")
         dv_pybamm_name = dependent_variables_to_pybamm_names[nameof(dv)]
         dv_processed = sim.solution.__getitem__(dv_pybamm_name)
         dv_pybamm_interpolation_function = dv_processed._interpolation_function
@@ -153,8 +161,13 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=tr
             iv_ranges = map(1:num_deps) do i
                 iv = deps[i]
                 iv_pybamm_name = independent_variables_to_pybamm_names[iv]
-                iv_axis_name = py_axis_name[i]
-                iv_grid = dv_pybamm_interpolation_function[iv_axis_name]
+                if num_deps > 2
+                    grid_indices = reverse(collect(1:num_deps))
+                    iv_grid = dv_pybamm_interpolation_function.grid[grid_indices[i]]
+                else
+                    iv_axis_name = py_axis_name[i]
+                    iv_grid = dv_pybamm_interpolation_function[iv_axis_name]
+                end
                 # assume time is first
                 iv_scale = i == 1 ? dv_processed.timescale : dv_processed.length_scales[iv_pybamm_name]
                 unscaled_iv_range = range(Interval(iv_grid[1], iv_grid[end]), grid_length)
@@ -167,10 +180,20 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=tr
 
         unscaled_ivs_mat = reduce(hcat, map(collect, vec(collect(product(unscaled_iv_ranges...)))))
         dv_pybamm_interpolator = FastChainInterpolator(dv_pybamm_interpolation_function)
-        dv_mat = first.(dv_pybamm_interpolator(unscaled_ivs_mat, Float64[]))
+        dv_mat = dv_pybamm_interpolator(unscaled_ivs_mat, Float64[])
+        @show size(dv_mat), typeof(dv_mat), size(dv_mat[1])
+        dv_mat = first.(dv_mat)
+        #if num_deps <= 2
+            #dv_mat = first.(dv_mat)
+        #else
+            #dv_mat = first(dv_mat)
+        #end
         dv_grid = reshape(dv_mat, fill(large_interp_grid_length, num_deps)...)
+        @show size(dv_grid)
+        @show size.(scaled_iv_ranges)
         #dv_grid = permutedims(reshape(dv_pybamm_interpolation_function[py_axis_name[num_deps + 1]], reverse(length.(iv_ranges))...), reverse(1:num_deps))
         dv_interpolation = FastChainInterpolator(extrapolate(scale(interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), scaled_iv_ranges...), Line()))
+        @show typeof(dv_interpolation)
 
         dv_fastchain = FastChain(dv_interpolation)
         unscaled_iv_ranges_small, scaled_iv_ranges_small = iv_ranges_from_grid_length(small_interp_grid_length)
@@ -214,7 +237,8 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=tr
     end
     sim_data_nt = read_sim_data(sim_filename)
 
-    strategy =  NeuralPDE.StochasticTraining(1024, 1024)
+    println("generating PINN discretization from the simulation interpolation to test against")
+    strategy =  NeuralPDE.StochasticTraining(num_stochastic_samples_from_loss, num_stochastic_samples_from_loss)
     discretization = NeuralPDE.PhysicsInformedNN(dvs_fastchain, strategy)
     symb_modded_pde_system = NeuralPDE.symbolic_discretize(pde_system, discretization; 
         subdomain_relations=subdomain_relations, 
@@ -241,6 +265,14 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=tr
     total_loss=total_loss,
     symb_modded_pde_system=symb_modded_pde_system,
     discretization=discretization)
+    #"""
+    #(sim_data=sim_data_nt, pde_system=pde_system, sim=sim, variables=variables, 
+    #independent_variables_to_pybamm_names=independent_variables_to_pybamm_names, 
+    #dependent_variables_to_pybamm_names=dependent_variables_to_pybamm_names,
+    #dependent_variables_to_dependencies=dependent_variables_to_dependencies,
+    #dvs_interpolation=dvs_interpolation,
+    #dvs_fastchain=dvs_fastchain,)
+    #"""
 end
 
 

@@ -156,8 +156,49 @@ get it to work within neuralpde first, then change the transpiler second
     !reduced_c_phi_j works fully now
 
     DFN_no_r
+        manual annotation changes:
+            !\kappa -> kappa
+            !added the subdomain_relations
+            !added eq_integration_domains: realized this could actually be calculated from the same place the dependent_variables_to_dependencies is, since it's the same data
+            !added ics_bcs_integration_domains: this is harder to get out of pybamm
+            I think it's missing the boundary conditions for c_s_n_rav and c_s_p_rav
+                the sim.model doesn't have these, I guess it doesn't have them in general??? maybe an issue though. I don't know what they should be in general for x domain bcs for c_s_n and c_s_p
+
+        things I noticed from examining the losses:
+            equation 4 (c_e pde) has huge loss. this is consistent with the observations from spme (large loss spikes near the separator boundary)
+            equation 12 (phi_s_p ic) has ~constant ~-3.13 loss.  this is strange and likely indicates a modelling issue
+            equation 14 (phi_e ic) has reasonably large but nonconstant loss.  this is strange and likely indicates a modelling issue
+            all other losses were small generally
 
     DFN
+        !handle the data blobs being 3D for c_s_n and c_s_p
+            !handled the RegularGridInterpolator
+        !manual annotation changes:
+            !\kappa -> kappa
+            !c_s_n/p ic: 
+                !didn't include the x_n and x_p variables
+            !added the subdomain_relations
+            !added eq_integration_domains: realized this could actually be calculated from the same place the dependent_variables_to_dependencies is, since it's the same data
+            !added ics_bcs_integration_domains: this is harder to get out of pybamm
+            !what to do about the c_s_n(t, 1.0, x_n) within pde issues????
+                !the way I handled the integration domains for the previous two won't hold here. need to annotate which variable is getting the set value 
+                !this will *not* work for all possible bcs because some pdes might have more than one fixed value for different parts of the equation 
+                    !(c_s_n(t,0.0,x_n) + c_s_n(t,1.0,x_n) would fail, for instance)
+    
+
+    !changed all integration_domain manual annotations to include the variable that is being replaced
+    !fixed the pde parser to recognize this format and fix it
+    !dfn runs! the loss is very terrible initially but it at least runs through loss without error
+    !sometimes the inits need tweaking because the sinh is out of domain
+                
+            
+            
+            
+            
+
+
+
+
 
 
 why is the boundary/initial condition for phi_s_p different than the other ones? ic of 2 and bc of (0, 1) neumann
