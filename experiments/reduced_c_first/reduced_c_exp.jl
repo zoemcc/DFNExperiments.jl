@@ -46,7 +46,7 @@ begin
     log_frequency = 1_000
     checkpoint_frequency = 5_000
     iterations = 200_000
-    log_string = "spme_c_e"
+    log_string = "reduced_c"
     if haskey(ENV, "LOG_DIR")
         log_dir = ENV["LOG_DIR"]
     else
