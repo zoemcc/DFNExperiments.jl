@@ -97,8 +97,37 @@ DFN blocks:
     figure out saving 3d blobs for reuse and plotting 3d blobs (basically just make sure both work still)
 
 
-add kwargs handling to StructGenerator
+
+!ok just pick the subdomain one. it's "doing it right" and not a lot more work so let's go!
+how to get the info to the neuralpde parser:
+    the correct way is to include it in the PDESystem. that takes a more work so I'm just going to include it as kwargs in the discretization.
+        !when this gets merged I will do it correctly but for the demo I will not
+    the way I'm doing it is by passing in subdomain relations as a Dict{Symbol, Symbol} of subdomain -> domain for those symbols
+    and the equation integration domains as a vector of tuples of the Symbols of integration
+    if either is nothing then default to the old behavior within neuralpde
+
+how to get the info out of PyBaMM:
+    subdomain:
+        if x_n, x_s, or x_p and x are in the variables we care about, then 
+            add the subdomain relation to the end
+            this won't work for larger stuff but we can hardcode it for now like the concatenation stuff is hardcoded
+
+    integration vars:
+        look at rhs's to figure out the integration domain
+            does this interact poorly with the Dx_n stuff in the bc's, for instance???
+
+within neuralpde parser/transformer:
+    pass the subdomain & integration info to the build symbolic stuff
+    dig in there to figure out exactly where things need to change. it's probably in the first sections where variables are assigned (in particular, cord 's)
+
+get it to work within neuralpde first, then change the transpiler second 
+    (less important, since I can manually add it for now. if I do it correctly, the loss_certificate should go down once I make the manual change and then I can automate it)
+
+add kwargs handling to StructGenerator to set the initial relative weights for the losses
+    work around for now is to just add a non-kwarg function to the MiniMaxAdaptiveLoss
+
 then start integration with the other models and fix errors/ expand design as they come up
+    ongoing! lots of progress tho
 
 collapse the concatenation terms so that it's just one concatenation term and then all the logic is combined so we only have to do one ifelse per equation
     (not strictly necessary but it would be a great optimization and for ease of understanding)
