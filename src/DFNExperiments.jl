@@ -10,7 +10,6 @@ using JSON
 using IterTools
 using IfElse
 using Plots, LinearAlgebra, TensorBoardLogger
-using PyCall
 
 include("utils.jl")
 
@@ -116,10 +115,11 @@ DiffEqFlux.initial_params(::FastChainInterpolator) = Float64[]
 
 function generate_sim_model_and_test(model::M; current_input=false, include_q=true, output_dir=nothing, num_pts=100, 
         large_interp_grid_length=1000, small_interp_grid_length=100, num_stochastic_samples_from_loss=1024, writemodel=true) where {M <: AbstractPyBaMMModel}
+    throw("PyCall and PyBaMM need to be installed for this function to run")
     model_str = pybamm_func_str(model)
     current_input_str = current_input ? "True" : "False" 
     include_q_str = include_q ? "True" : "False"
-    sim, mtk_str, variables = py"solve_plot_generate(*$$(model_str)(), current_input=$$(current_input_str), include_q=$$(include_q_str), num_pts=$$(num_pts))"
+    #sim, mtk_str, variables = py"solve_plot_generate(*$$(model_str)(), current_input=$$(current_input_str), include_q=$$(include_q_str), num_pts=$$(num_pts))"
 
     if typeof(output_dir) <: AbstractString
         if !isdir(output_dir)
