@@ -1,6 +1,6 @@
 begin
     using Pkg
-    Pkg.activate(abspath(joinpath(@__DIR__, "..")))
+    Pkg.activate(abspath(joinpath(@__DIR__, "..", "..")))
     using Distributed
     NUM_WORKERS = 0
     if NUM_WORKERS > 0
