@@ -2,7 +2,7 @@
 
 # Slurm sbatch options
 #SBATCH -o neuralpde_jobarray.log-%A-%a
-#SBATCH -a 1-16
+#SBATCH -a 1-128
 #SBATCH -c 1
 
 # Initialize julia path
