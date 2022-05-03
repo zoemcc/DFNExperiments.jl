@@ -123,6 +123,14 @@ within neuralpde parser/transformer:
 get it to work within neuralpde first, then change the transpiler second 
     (less important, since I can manually add it for now. if I do it correctly, the loss_certificate should go down once I make the manual change and then I can automate it)
 
+    get it to run inside neuralpde, then piece it apart
+    get the info inside w/ kwargs
+    surgical changes
+
+
+why is the boundary/initial condition for phi_s_p different than the other ones? ic of 2 and bc of (0, 1) neumann
+    make sure the DFN one is similar
+
 add kwargs handling to StructGenerator to set the initial relative weights for the losses
     work around for now is to just add a non-kwarg function to the MiniMaxAdaptiveLoss
 
