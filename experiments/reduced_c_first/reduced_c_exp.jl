@@ -1,6 +1,7 @@
 begin
     using Pkg
-    Pkg.activate(abspath(joinpath(@__DIR__, "..", "..")))
+    env_path = abspath(joinpath(@__DIR__, "..", ".."))
+    Pkg.activate(env_path)
     using Distributed
     NUM_WORKERS = 0
     if NUM_WORKERS > 0
@@ -14,7 +15,7 @@ end
     # for headless plots
     ENV["GKSwstype"] = "100"
     using Pkg
-    Pkg.activate(abspath(joinpath(@__DIR__, "..")))
+    Pkg.activate(env_path)
 end
 @everywhere begin 
     using DFNExperiments, NeuralPDE
