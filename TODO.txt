@@ -191,6 +191,13 @@ get it to work within neuralpde first, then change the transpiler second
     !dfn runs! the loss is very terrible initially but it at least runs through loss without error
     !sometimes the inits need tweaking because the sinh is out of domain
                 
+
+
+full DFN fix problems
+    interpolation for better loss cert
+finish implementing laplacian eigenfunction rMFN (with the sum of regular MLP for the nonzero boundary conditions)
+exponential moving average of time domain weights
+    implement as a sampling strategy? this could be easy and efficient
             
             
             

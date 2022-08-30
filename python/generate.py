@@ -1,5 +1,6 @@
 import pybamm
 import rich
+from icecream import ic
 from rich import inspect
 from IPython import embed
 
@@ -93,11 +94,28 @@ def reduced_c():
         def __init__(self, name="reduced_c"):
             super().__init__(name)
             param = self.param
-            c_e = pybamm.Variable(
-                "Electrolyte concentration",
-                ["negative electrode", "separator", "positive electrode"],
+            #c_e = pybamm.Variable(
+                #"Electrolyte concentration",
+                #["negative electrode", "separator", "positive electrode"],
+            #)
+            #c_e.short_name = "c_e"
+            #c_e.print_name = "c_e"
+            c_e_n = pybamm.Variable(
+                "Electrolyte concentration neg", "negative electrode"
             )
+            c_e_s = pybamm.Variable("Electrolyte concentration sep", "separator")
+            c_e_p = pybamm.Variable(
+                "Electrolyte concentration pos", "positive electrode"
+            )
+            c_e_n.short_name = "c_e_n"
+            c_e_n.print_name = "c_e_n"
+            c_e_s.short_name = "c_e_s"
+            c_e_s.print_name = "c_e_s"
+            c_e_p.short_name = "c_e_p"
+            c_e_p.print_name = "c_e_p"
+            c_e = pybamm.concatenation(c_e_n, c_e_s, c_e_p)
             c_e.short_name = "c_e"
+            c_e.print_name = "c_e"
 
             j = pybamm.concatenation(
                 pybamm.PrimaryBroadcast(1 / param.l_n, "negative electrode"),
@@ -111,7 +129,13 @@ def reduced_c():
                 "left": (pybamm.Scalar(0), "Neumann"),
                 "right": (pybamm.Scalar(0), "Neumann"),
             }
-            self.variables.update({"Electrolyte concentration": c_e})
+            #self.variables.update({"Electrolyte concentration": c_e})
+            self.variables.update({
+                "Electrolyte concentration neg": c_e_n,
+                "Electrolyte concentration sep": c_e_s,
+                "Electrolyte concentration pos": c_e_p,
+                                   })
+            ic(self.variables)
 
     model = Model()
     variables = list(model.variables.keys())
@@ -123,16 +147,47 @@ def reduced_c_phi():
         def __init__(self, name="reduced_c_phi"):
             super().__init__(name)
             param = self.param
-            c_e = pybamm.Variable(
-                "Electrolyte concentration",
-                ["negative electrode", "separator", "positive electrode"],
+            #c_e = pybamm.Variable(
+                #"Electrolyte concentration",
+                #["negative electrode", "separator", "positive electrode"],
+            #)
+            #c_e.short_name = "c_e"
+            #c_e.print_name = "c_e"
+            c_e_n = pybamm.Variable(
+                "Electrolyte concentration neg", "negative electrode"
             )
+            c_e_s = pybamm.Variable("Electrolyte concentration sep", "separator")
+            c_e_p = pybamm.Variable(
+                "Electrolyte concentration pos", "positive electrode"
+            )
+            c_e_n.short_name = "c_e_n"
+            c_e_n.print_name = "c_e_n"
+            c_e_s.short_name = "c_e_s"
+            c_e_s.print_name = "c_e_s"
+            c_e_p.short_name = "c_e_p"
+            c_e_p.print_name = "c_e_p"
+            c_e = pybamm.concatenation(c_e_n, c_e_s, c_e_p)
             c_e.short_name = "c_e"
-            phi_e = pybamm.Variable(
-                "Electrolyte potential",
-                ["negative electrode", "separator", "positive electrode"],
-            )
+            c_e.print_name = "c_e"
+
+            #phi_e = pybamm.Variable(
+                #"Electrolyte potential",
+                #["negative electrode", "separator", "positive electrode"],
+            #)
+            #phi_e.short_name = "phi_e"
+            #phi_e.print_name = "phi_e"
+            phi_e_n = pybamm.Variable("Negative electrolyte potential", "negative electrode")
+            phi_e_s = pybamm.Variable("Separator electrolyte potential", "separator")
+            phi_e_p = pybamm.Variable("Positive electrolyte potential", "positive electrode")
+            phi_e_n.short_name = "phi_e_n"
+            phi_e_n.print_name = "phi_e_n"
+            phi_e_s.short_name = "phi_e_s"
+            phi_e_s.print_name = "phi_e_s"
+            phi_e_p.short_name = "phi_e_p"
+            phi_e_p.print_name = "phi_e_p"
+            phi_e = pybamm.concatenation(phi_e_n, phi_e_s, phi_e_p)
             phi_e.short_name = "phi_e"
+            phi_e.print_name = "phi_e"
 
             j = pybamm.concatenation(
                 pybamm.PrimaryBroadcast(1 / param.l_n, "negative electrode"),
@@ -176,22 +231,34 @@ def reduced_c_phi_j():
                 "Electrolyte concentration pos", "positive electrode"
             )
             c_e_n.short_name = "c_e_n"
+            c_e_n.print_name = "c_e_n"
             c_e_s.short_name = "c_e_s"
+            c_e_s.print_name = "c_e_s"
             c_e_p.short_name = "c_e_p"
+            c_e_p.print_name = "c_e_p"
             c_e = pybamm.concatenation(c_e_n, c_e_s, c_e_p)
+            c_e.short_name = "c_e"
+            c_e.print_name = "c_e"
 
             phi_e_n = pybamm.Variable("Negative electrolyte potential", "negative electrode")
             phi_e_s = pybamm.Variable("Separator electrolyte potential", "separator")
             phi_e_p = pybamm.Variable("Positive electrolyte potential", "positive electrode")
             phi_e_n.short_name = "phi_e_n"
+            phi_e_n.print_name = "phi_e_n"
             phi_e_s.short_name = "phi_e_s"
+            phi_e_s.print_name = "phi_e_s"
             phi_e_p.short_name = "phi_e_p"
+            phi_e_p.print_name = "phi_e_p"
             phi_e = pybamm.concatenation(phi_e_n, phi_e_s, phi_e_p)
+            phi_e.short_name = "phi_e"
+            phi_e.print_name = "phi_e"
 
             phi_s_n = pybamm.Variable("Negative electrode potential", "negative electrode")
             phi_s_p = pybamm.Variable("Positive electrode potential", "positive electrode")
             phi_s_n.short_name = "phi_s_n"
+            phi_s_n.print_name = "phi_s_n"
             phi_s_p.short_name = "phi_s_p"
+            phi_s_p.print_name = "phi_s_p"
 
             j_n = c_e_n ** 0.5 * pybamm.sinh(phi_s_n - phi_e_n + 1)
             j_p = c_e_p ** 0.5 * pybamm.sinh(phi_s_p - phi_e_p - 4)
@@ -285,6 +352,10 @@ def solve_plot_generate(model, variables, current_input=False, include_q=True, n
     pybamm.set_logging_level("INFO")
     sim.solve([0, 3600], inputs=inputs)
 
+    # save mtk_str to file
+    with open("./models/playground/model.jl", "w") as f:
+        f.write(mtk_str)
+
     # Plot
     # sim.plot(dep_vars)
 
@@ -305,4 +376,7 @@ def solve_plot_generate(model, variables, current_input=False, include_q=True, n
     return sim, mtk_str, variables
 
 
-#solve_plot_generate(*spme())
+#solve_plot_generate(*spme(), current_input=False)
+#solve_plot_generate(*reduced_c(), current_input=False)
+#solve_plot_generate(*reduced_c_phi_j(), current_input=False)
+solve_plot_generate(*dfn(), current_input=False)

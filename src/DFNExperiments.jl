@@ -102,7 +102,7 @@ function (fastchaininterpolator::FastChainInterpolator)(v, θ)
     #@show v
     if size(v, 1) > 2
         # this uses RegularGridInterpolator which is an ND interpolator so it expects a vector in
-        inputs = [v[:, i] for i in 1:size(v, 2)]
+        inputs = [@view v[:, i] for i in 1:size(v, 2)]
         output = fastchaininterpolator.interpolator.(inputs)
     else
         # this uses 1-d or 2-d interpolators which expect a tuple of arguments
@@ -135,6 +135,9 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=tr
         open(model_filename, "w") do f
             write(f, mtk_str)
         end
+    end
+    if true
+        return 1:20
     end
     include(model_filename)
 

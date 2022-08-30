@@ -1,4 +1,4 @@
-rebuild = false
+rebuild = true
 if rebuild
     ENV["PYTHON"] = joinpath(ENV["ANACONDA_LOCATION"], "envs", "pybamm_dev", "bin", "python")
     using Pkg
@@ -21,14 +21,14 @@ begin
     #models = [SPMModel(), SPMeModel()]
     #SPMnoRModel(), 
     all_models = [SPMModel(), ReducedCModel(), SPMeModel(), ReducedCPhiModel(), ReducedCPhiJModel(), DFNnoRModel(), DFNModel()]
-    num_pts = 4000
-    large_interp_grid_lengths = 1000
+    num_pts = 200
+    large_interp_grid_lengths = 100
     small_interp_grid_length = 100
-    num_stochastic_samples_from_loss = 1024
+    num_stochastic_samples_from_loss = 4
     current_input = false
     #model = all_models[1]
     #for i in 1:5
-    j = 5
+    j = 2
     i = j
     #for i in j:j
     begin
@@ -39,7 +39,7 @@ begin
         output_dir = joinpath(models_dir, "$(model_str)")
         model_file = joinpath(output_dir, "model.jl")
         loss_file = joinpath(output_dir, "loss_certificate.txt")
-        writemodel=false
+        writemodel=true
         writesimdata=true
         writeloss=true
 
@@ -61,7 +61,7 @@ begin
                     )
         """
         nothing
-        if !isnothing(prob)
+        if false && !isnothing(prob)
             example_loss = prob.f(ev,ev)
             @show example_loss
             if writeloss

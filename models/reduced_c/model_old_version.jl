@@ -6,13 +6,13 @@ independent_variables_to_pybamm_names = Dict(
   :t => "Time",
   :x => "negative electrode",
 )
-# 'Electrolyte concentration' -> c_e
-@variables c_e(..)
+# 'Electrolyte concentration' -> u1
+@variables u1(..)
 dependent_variables_to_pybamm_names = Dict(
-  :c_e => "Electrolyte concentration",
+  :u1 => "Electrolyte concentration",
 )
 dependent_variables_to_dependencies = Dict(
-  :c_e => (:t, :x),
+  :u1 => (:t, :x),
 )
 Dt = Differential(t)
 Dx = Differential(x)
@@ -28,21 +28,21 @@ function concatenation(x, n, s, p)
    )
 end
 
-cache_m8587173813837221631 = concatenation(x, 2.25, 0.0, -2.25)
-cache_m5374597158501241961 = (Dx(Dx(c_e(t, x)))) + cache_m8587173813837221631
+cache_8465239269301779922 = concatenation(x, 2.25, 0.0, -2.25)
+cache_7469405367862761164 = (Dx(Dx(u1(t, x)))) + cache_8465239269301779922
 
 
 eqs = [
-   Dt(c_e(t, x)) ~ cache_m5374597158501241961,
+   Dt(u1(t, x)) ~ cache_7469405367862761164,
 ]
 
 
 ics_bcs = [
    # initial conditions
-   c_e(0, x) ~ 1.0,
+   u1(0, x) ~ 1.0,
    # boundary conditions
-   Dx(c_e(t, 0.0)) ~ 0.0,
-   Dx(c_e(t, 1.0)) ~ 0.0,
+   Dx(u1(t, 0.0)) ~ 0.0,
+   Dx(u1(t, 1.0)) ~ 0.0,
 ]
 
 t_domain = Interval(0.000,1.000)
@@ -54,7 +54,7 @@ domains = [
 ]
 
 ind_vars = [t, x]
-dep_vars = [c_e(t, x)]
+dep_vars = [u1(t, x)]
 
 @named reduced_c_pde_system = PDESystem(eqs, ics_bcs, domains, ind_vars, dep_vars)
 pde_system = reduced_c_pde_system
