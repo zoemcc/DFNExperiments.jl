@@ -3,16 +3,16 @@ using IfElse
 # ('negative particle',) -> r_n
 # ('positive particle',) -> r_p
 # ('negative electrode',) -> x_n
-# ('positive electrode',) -> x_p
 # ('separator',) -> x_s
-@parameters t r_n r_p x_n x_p x_s
+# ('positive electrode',) -> x_p
+@parameters t r_n r_p x_n x_s x_p
 independent_variables_to_pybamm_names = Dict(
   :t => "Time",
   :r_n => "negative particle",
   :r_p => "positive particle",
   :x_n => "negative electrode",
-  :x_p => "positive electrode",
   :x_s => "separator",
+  :x_p => "positive electrode",
 )
 # 'Discharge capacity [A.h]' -> Q_Ah
 # 'Negative particle concentration' -> c_s_n
@@ -56,14 +56,14 @@ Dt = Differential(t)
 Dr_n = Differential(r_n)
 Dr_p = Differential(r_p)
 Dx_n = Differential(x_n)
-Dx_p = Differential(x_p)
 Dx_s = Differential(x_s)
+Dx_p = Differential(x_p)
 
 # 'Negative particle concentration' equation
-cache_8312658946482800287 = 8.813457647415216 * (1 / r_n^2 * Dr_n(r_n^2 * Dr_n(c_s_n(t, r_n, x_n))))
+cache_m5029737491480834577 = 8.813457647415216 * (1 / r_n^2 * Dr_n(r_n^2 * Dr_n(c_s_n(t, r_n, x_n))))
 
 # 'Positive particle concentration' equation
-cache_m6038014108242799586 = 22.598609352346717 * (1 / r_p^2 * Dr_p(r_p^2 * Dr_p(c_s_p(t, r_p, x_p))))
+cache_5169148214163167780 = 22.598609352346717 * (1 / r_p^2 * Dr_p(r_p^2 * Dr_p(c_s_p(t, r_p, x_p))))
 
 # 'Electrolyte concentration' equation
 
@@ -91,63 +91,63 @@ function U_p(sto)
    2.16216 + 0.07645 * tanh(30.834 - (57.858397200000006 * sto)) + 2.1581 * tanh(52.294 - (53.412228 * sto)) - (0.14169 * tanh(11.0923 - (21.0852666 * sto))) + 0.2051 * tanh(1.4684 - (5.829105600000001 * sto)) + 0.2531 * tanh((-1.062 * sto + 0.56478) / 0.1316) - (0.02167 * tanh(((1.062 * sto) - 0.525) / 0.006))
 end
 
-cache_3735536429057678950_n = -589429731.3893579
-cache_3735536429057678950_s = -3587155110.512914
-cache_3735536429057678950_p = -589429731.3893579
-cache_m5873604127639895072_n = 0.7818002858515763
-cache_m5873604127639895072_s = 4.757885022498838
-cache_m5873604127639895072_p = 0.7818002858515763
-cache_m5797442676273946225_n = 
+cache_4747164141567654660_n = -589429731.3893579
+cache_4747164141567654660_s = -3587155110.512914
+cache_4747164141567654660_p = -589429731.3893579
+cache_5504017308437509820_n = 0.7818002858515763
+cache_5504017308437509820_s = 4.757885022498838
+cache_5504017308437509820_p = 0.7818002858515763
+cache_3508214911784665702_n = 
    ((((2.0 * max(1.0,1e-08)) / 0.5925925925925926) * (j0_n(max(1e-08,c_e_n(t, x_n)) * 1000.0, (max(1e-08,min(c_s_n(t, 1.0, x_n),0.99999999)) * 24983.2619938437), 298.15))) * (sinh(0.5 * ((phi_s_n(t, x_n) - phi_e_n(t, x_n)) - (((U_n(c_s_n(t, 1.0, x_n)) + ((1e-06 * (1.0 / c_s_n(t, 1.0, x_n))) + (1e-06 * (1.0 / (c_s_n(t, 1.0, x_n) - 1.0))))) - 0.175189434028335) / 0.025692579121493725))))) / 0.04002679875215723
 
-cache_m5797442676273946225_s = 0.0
-cache_m5797442676273946225_p = 
+cache_3508214911784665702_s = 0.0
+cache_3508214911784665702_p = 
    ((((2.0 * max(1.0,1e-08)) * 1.4062500000000002) * (j0_p(max(1e-08,c_e_p(t, x_p)) * 1000.0, (max(1e-08,min(c_s_p(t, 1.0, x_p),0.99999999)) * 51217.9257309275), 298.15))) * (sinh(0.5 * ((phi_s_p(t, x_p) - phi_e_p(t, x_p)) - (((U_p(c_s_p(t, 1.0, x_p)) + ((1e-06 * (1.0 / c_s_p(t, 1.0, x_p))) + (1e-06 * (1.0 / (c_s_p(t, 1.0, x_p) - 1.0))))) - 4.027013014008729) / 0.025692579121493725))))) / 0.04002679875215723
 
-cache_m4749373464717463992_n = 0.3
-cache_m4749373464717463992_s = 1.0
-cache_m4749373464717463992_p = 0.3
-cache_8098784008679700291 = (((div_('negative electrode', 'separator', 'positive electrode')(((cache_3735536429057678950 * (D_e(cache_3678814426751917011 * 1000.0, 298.15))) * grad_('negative electrode', 'separator', 'positive electrode')(cache_3678814426751917011)) + (0.08030500458941565 * (((\kappa_e(cache_3678814426751917011 * 1000.0, 298.15)) * cache_m5873604127639895072) * (((1.2 * grad_('negative electrode', 'separator', 'positive electrode')(cache_3678814426751917011)) / cache_3678814426751917011) - grad_('negative electrode', 'separator', 'positive electrode')(cache_865112142476148366)))))) / -0.008035880643729006) + cache_m5797442676273946225) / cache_m4749373464717463992
+cache_2399464317057005869_n = 0.3
+cache_2399464317057005869_s = 1.0
+cache_2399464317057005869_p = 0.3
+cache_m870330879654857188 = (((div_('negative electrode', 'separator', 'positive electrode')(((cache_4747164141567654660 * (D_e(cache_m2058731850133900706 * 1000.0, 298.15))) * grad_('negative electrode', 'separator', 'positive electrode')(cache_m2058731850133900706)) + (0.08030500458941565 * (((\kappa_e(cache_m2058731850133900706 * 1000.0, 298.15)) * cache_5504017308437509820) * (((1.2 * grad_('negative electrode', 'separator', 'positive electrode')(cache_m2058731850133900706)) / cache_m2058731850133900706) - grad_('negative electrode', 'separator', 'positive electrode')(cache_4950829125758629760)))))) / -0.008035880643729006) + cache_3508214911784665702) / cache_2399464317057005869
 
 # 'Negative electrode potential' equation
-cache_m7922416697080121595 = (-Dx_n(221.12651346369245 * Dx_n(phi_s_n(t, x_n)))) + ((((2.0 * max(1.0,1e-08)) / 0.5925925925925926) * (j0_n(max(1e-08,c_e_n(t, x_n)) * 1000.0, (max(1e-08,min(c_s_n(t, 1.0, x_n),0.99999999)) * 24983.2619938437), 298.15))) * (sinh(0.5 * ((phi_s_n(t, x_n) - phi_e_n(t, x_n)) - (((U_n(c_s_n(t, 1.0, x_n)) + ((1e-06 * (1.0 / c_s_n(t, 1.0, x_n))) + (1e-06 * (1.0 / (c_s_n(t, 1.0, x_n) - 1.0))))) - 0.175189434028335) / 0.025692579121493725)))))
+cache_m1447976666897118322 = (-Dx_n(221.12651346369245 * Dx_n(phi_s_n(t, x_n)))) + ((((2.0 * max(1.0,1e-08)) / 0.5925925925925926) * (j0_n(max(1e-08,c_e_n(t, x_n)) * 1000.0, (max(1e-08,min(c_s_n(t, 1.0, x_n),0.99999999)) * 24983.2619938437), 298.15))) * (sinh(0.5 * ((phi_s_n(t, x_n) - phi_e_n(t, x_n)) - (((U_n(c_s_n(t, 1.0, x_n)) + ((1e-06 * (1.0 / c_s_n(t, 1.0, x_n))) + (1e-06 * (1.0 / (c_s_n(t, 1.0, x_n) - 1.0))))) - 0.175189434028335) / 0.025692579121493725)))))
 
 # 'Positive electrode potential' equation
-cache_7492897170245293120 = (-Dx_p(16.82166381757419 * Dx_p(phi_s_p(t, x_p)))) + ((((2.0 * max(1.0,1e-08)) * 1.4062500000000002) * (j0_p(max(1e-08,c_e_p(t, x_p)) * 1000.0, (max(1e-08,min(c_s_p(t, 1.0, x_p),0.99999999)) * 51217.9257309275), 298.15))) * (sinh(0.5 * ((phi_s_p(t, x_p) - phi_e_p(t, x_p)) - (((U_p(c_s_p(t, 1.0, x_p)) + ((1e-06 * (1.0 / c_s_p(t, 1.0, x_p))) + (1e-06 * (1.0 / (c_s_p(t, 1.0, x_p) - 1.0))))) - 4.027013014008729) / 0.025692579121493725)))))
+cache_6547284873022343977 = (-Dx_p(16.82166381757419 * Dx_p(phi_s_p(t, x_p)))) + ((((2.0 * max(1.0,1e-08)) * 1.4062500000000002) * (j0_p(max(1e-08,c_e_p(t, x_p)) * 1000.0, (max(1e-08,min(c_s_p(t, 1.0, x_p),0.99999999)) * 51217.9257309275), 298.15))) * (sinh(0.5 * ((phi_s_p(t, x_p) - phi_e_p(t, x_p)) - (((U_p(c_s_p(t, 1.0, x_p)) + ((1e-06 * (1.0 / c_s_p(t, 1.0, x_p))) + (1e-06 * (1.0 / (c_s_p(t, 1.0, x_p) - 1.0))))) - 4.027013014008729) / 0.025692579121493725)))))
 
 # 'Electrolyte potential' equation
-cache_m5873604127639895072_n = 0.7818002858515763
-cache_m5873604127639895072_s = 4.757885022498838
-cache_m5873604127639895072_p = 0.7818002858515763
-cache_4605328898565199991_n = 
+cache_5504017308437509820_n = 0.7818002858515763
+cache_5504017308437509820_s = 4.757885022498838
+cache_5504017308437509820_p = 0.7818002858515763
+cache_m6942862524459984549_n = 
    (((2.0 * max(1.0,1e-08)) / 0.5925925925925926) * (j0_n(max(1e-08,c_e_n(t, x_n)) * 1000.0, (max(1e-08,min(c_s_n(t, 1.0, x_n),0.99999999)) * 24983.2619938437), 298.15))) * (sinh(0.5 * ((phi_s_n(t, x_n) - phi_e_n(t, x_n)) - (((U_n(c_s_n(t, 1.0, x_n)) + ((1e-06 * (1.0 / c_s_n(t, 1.0, x_n))) + (1e-06 * (1.0 / (c_s_n(t, 1.0, x_n) - 1.0))))) - 0.175189434028335) / 0.025692579121493725))))
 
-cache_4605328898565199991_s = 0.0
-cache_4605328898565199991_p = 
+cache_m6942862524459984549_s = 0.0
+cache_m6942862524459984549_p = 
    (((2.0 * max(1.0,1e-08)) * 1.4062500000000002) * (j0_p(max(1e-08,c_e_p(t, x_p)) * 1000.0, (max(1e-08,min(c_s_p(t, 1.0, x_p),0.99999999)) * 51217.9257309275), 298.15))) * (sinh(0.5 * ((phi_s_p(t, x_p) - phi_e_p(t, x_p)) - (((U_p(c_s_p(t, 1.0, x_p)) + ((1e-06 * (1.0 / c_s_p(t, 1.0, x_p))) + (1e-06 * (1.0 / (c_s_p(t, 1.0, x_p) - 1.0))))) - 4.027013014008729) / 0.025692579121493725))))
 
-cache_8145837372629906635 = (div_('negative electrode', 'separator', 'positive electrode')(((\kappa_e(cache_3678814426751917011 * 1000.0, 298.15)) * cache_m5873604127639895072) * (((1.2 * grad_('negative electrode', 'separator', 'positive electrode')(cache_3678814426751917011)) / cache_3678814426751917011) - grad_('negative electrode', 'separator', 'positive electrode')(cache_865112142476148366)))) - cache_4605328898565199991
+cache_m5621236326153200774 = (div_('negative electrode', 'separator', 'positive electrode')(((\kappa_e(cache_m2058731850133900706 * 1000.0, 298.15)) * cache_5504017308437509820) * (((1.2 * grad_('negative electrode', 'separator', 'positive electrode')(cache_m2058731850133900706)) / cache_m2058731850133900706) - grad_('negative electrode', 'separator', 'positive electrode')(cache_4950829125758629760)))) - cache_m6942862524459984549
 
 
 eqs = [
    Dt(Q_Ah(t)) ~ 4.27249308415467,
-   Dt(c_s_n(t, r_n, x_n)) ~ cache_8312658946482800287,
-   Dt(c_s_p(t, r_p, x_p)) ~ cache_m6038014108242799586,
-   Dt(c_e_n(t, x_n)) ~ cache_8098784008679700291,
-   Dt(c_e_s(t, x_s)) ~ cache_8098784008679700291,
-   Dt(c_e_p(t, x_p)) ~ cache_8098784008679700291,
-   0 ~ cache_m7922416697080121595,
-   0 ~ cache_7492897170245293120,
-   0 ~ cache_8145837372629906635,
-   0 ~ cache_8145837372629906635,
-   0 ~ cache_8145837372629906635,
+   Dt(c_s_n(t, r_n, x_n)) ~ cache_m5029737491480834577,
+   Dt(c_s_p(t, r_p, x_p)) ~ cache_5169148214163167780,
+   Dt(c_e_n(t, x_n)) ~ cache_m870330879654857188,
+   Dt(c_e_s(t, x_s)) ~ cache_m870330879654857188,
+   Dt(c_e_p(t, x_p)) ~ cache_m870330879654857188,
+   0 ~ cache_m1447976666897118322,
+   0 ~ cache_6547284873022343977,
+   0 ~ cache_m5621236326153200774,
+   0 ~ cache_m5621236326153200774,
+   0 ~ cache_m5621236326153200774,
 ]
 
 # 'Negative particle concentration' boundary condition
-cache_m6121809291522410340 = -0.06303491521497095 * ((((2.0 * max(1.0,1e-08)) / 0.5925925925925926) * (j0_n(max(1e-08,c_e_n(t, x_n)) * 1000.0, (max(1e-08,min(c_s_n(t, 1.0, x_n),0.99999999)) * 24983.2619938437), 298.15))) * (sinh(0.5 * ((phi_s_n(t, x_n) - phi_e_n(t, x_n)) - (((U_n(c_s_n(t, 1.0, x_n)) + ((1e-06 * (1.0 / c_s_n(t, 1.0, x_n))) + (1e-06 * (1.0 / (c_s_n(t, 1.0, x_n) - 1.0))))) - 0.175189434028335) / 0.025692579121493725)))))
+cache_m5868617320258126531 = -0.06303491521497095 * ((((2.0 * max(1.0,1e-08)) / 0.5925925925925926) * (j0_n(max(1e-08,c_e_n(t, x_n)) * 1000.0, (max(1e-08,min(c_s_n(t, 1.0, x_n),0.99999999)) * 24983.2619938437), 298.15))) * (sinh(0.5 * ((phi_s_n(t, x_n) - phi_e_n(t, x_n)) - (((U_n(c_s_n(t, 1.0, x_n)) + ((1e-06 * (1.0 / c_s_n(t, 1.0, x_n))) + (1e-06 * (1.0 / (c_s_n(t, 1.0, x_n) - 1.0))))) - 0.175189434028335) / 0.025692579121493725)))))
 
 # 'Positive particle concentration' boundary condition
-cache_m4349213403903004770 = -0.014389780933518372 * ((((2.0 * max(1.0,1e-08)) * 1.4062500000000002) * (j0_p(max(1e-08,c_e_p(t, x_p)) * 1000.0, (max(1e-08,min(c_s_p(t, 1.0, x_p),0.99999999)) * 51217.9257309275), 298.15))) * (sinh(0.5 * ((phi_s_p(t, x_p) - phi_e_p(t, x_p)) - (((U_p(c_s_p(t, 1.0, x_p)) + ((1e-06 * (1.0 / c_s_p(t, 1.0, x_p))) + (1e-06 * (1.0 / (c_s_p(t, 1.0, x_p) - 1.0))))) - 4.027013014008729) / 0.025692579121493725)))))
+cache_m4492698579022110450 = -0.014389780933518372 * ((((2.0 * max(1.0,1e-08)) * 1.4062500000000002) * (j0_p(max(1e-08,c_e_p(t, x_p)) * 1000.0, (max(1e-08,min(c_s_p(t, 1.0, x_p),0.99999999)) * 51217.9257309275), 298.15))) * (sinh(0.5 * ((phi_s_p(t, x_p) - phi_e_p(t, x_p)) - (((U_p(c_s_p(t, 1.0, x_p)) + ((1e-06 * (1.0 / c_s_p(t, 1.0, x_p))) + (1e-06 * (1.0 / (c_s_p(t, 1.0, x_p) - 1.0))))) - 4.027013014008729) / 0.025692579121493725)))))
 
 
 ics_bcs = [
@@ -165,9 +165,9 @@ ics_bcs = [
    phi_e_p(0, x_p) ~ -0.0,
    # boundary conditions
    Dr_n(c_s_n(t, 0.0, x_n)) ~ 0.0,
-   Dr_n(c_s_n(t, 1.0, x_n)) ~ cache_m6121809291522410340,
+   Dr_n(c_s_n(t, 1.0, x_n)) ~ cache_m5868617320258126531,
    Dr_p(c_s_p(t, 0.0, x_p)) ~ 0.0,
-   Dr_p(c_s_p(t, 1.0, x_p)) ~ cache_m4349213403903004770,
+   Dr_p(c_s_p(t, 1.0, x_p)) ~ cache_m4492698579022110450,
    phi_s_n(t, 0.0) ~ 0.0,
    Dx_n(phi_s_n(t, 0.4444444444444445)) ~ 0.0,
    Dx_p(phi_s_p(t, 0.5555555555555556)) ~ 0.0,
@@ -186,19 +186,19 @@ t_domain = Interval(0.000,0.159)
 r_n_domain = Interval(0.0, 1.0)
 r_p_domain = Interval(0.0, 1.0)
 x_n_domain = Interval(0.0, 0.4444444444444445)
-x_p_domain = Interval(0.5555555555555556, 1.0)
 x_s_domain = Interval(0.4444444444444445, 0.5555555555555556)
+x_p_domain = Interval(0.5555555555555556, 1.0)
 
 domains = [
    t in t_domain,
    r_n in r_n_domain,
    r_p in r_p_domain,
    x_n in x_n_domain,
-   x_p in x_p_domain,
    x_s in x_s_domain,
+   x_p in x_p_domain,
 ]
 
-ind_vars = [t, r_n, r_p, x_n, x_p, x_s]
+ind_vars = [t, r_n, r_p, x_n, x_s, x_p]
 dep_vars = [Q_Ah(t), c_s_n(t, r_n, x_n), c_s_p(t, r_p, x_p), c_e_n(t, x_n), c_e_s(t, x_s), c_e_p(t, x_p), phi_s_n(t, x_n), phi_s_p(t, x_p), phi_e_n(t, x_n), phi_e_s(t, x_s), phi_e_p(t, x_p)]
 
 @named DFN_pde_system = PDESystem(eqs, ics_bcs, domains, ind_vars, dep_vars)
