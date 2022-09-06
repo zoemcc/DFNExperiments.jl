@@ -353,8 +353,12 @@ def solve_plot_generate(model, variables, current_input=False, include_q=True, n
     sim.solve([0, 3600], inputs=inputs)
 
     # save mtk_str to file
-    with open("./models/playground/model.jl", "w") as f:
+    outfile = "./models/playground/model.jl"
+    ic(outfile)
+    with open(outfile, "w") as f:
+        ic("writing outfile")
         f.write(mtk_str)
+        ic("writing successful")
 
     # Plot
     # sim.plot(dep_vars)
