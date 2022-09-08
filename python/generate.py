@@ -308,13 +308,42 @@ def reduced_c_phi_j():
     return model, variables
 
 
-def solve_plot_generate(model, variables, current_input=False, include_q=True, num_pts=100):
+def solve_plot_generate(model, variables, current_input=False, include_q=False, num_pts=100):
+    #ic(model.rhs.keys())
+    #ic(model.rhs.items())
+    #ic(model.algebraic)
+    ic(include_q)
     if include_q:
         common_vars = ["Time", "x", "x_n", "x_p", "r_n", "r_p", "Discharge capacity [A.h]"]
+        
     else:
         common_vars = ["Time", "x", "x_n", "x_p", "r_n", "r_p"]
+        rhs_to_pop = []
+        for i, var in enumerate(model.rhs.keys()):
+            if var.name == "Discharge capacity [A.h]":
+                rhs_to_pop.append((var, model.rhs[var]))
+        for popee, val in rhs_to_pop:
+            ic(popee)
+            ic(val)
+            model.rhs.pop(popee)
+        ic("ic's")
+        ic_to_pop = []
+        for i, var in enumerate(model.initial_conditions):
+            if var.name == "Discharge capacity [A.h]":
+                ic_to_pop.append((var, model.initial_conditions[var]))
+        for popee, val in ic_to_pop:
+            ic(popee)
+            ic(val)
+            model.initial_conditions.pop(popee)
+        #ic("bc's")
+        #for i, var in enumerate(model.boundary_conditions):
+            #ic(var.name)
+            #ic(model.boundary_conditions[var])
+    ic(common_vars)
     variables = list(set(common_vars + variables))
+    ic(variables)
     dep_vars = [x for x in variables if x not in common_vars]
+    ic(dep_vars)
 
     parameter_values = model.default_parameter_values
     # parameter_values["Electrolyte diffusivity [m2.s-1]"] = 1e-10
@@ -342,16 +371,6 @@ def solve_plot_generate(model, variables, current_input=False, include_q=True, n
     mtk_str = pybamm.get_julia_mtk_model(
         sim.model, geometry=sim.geometry, tspan=(0, 3600)
     )
-    #print(mtk_str)
-
-    # Solve
-    parameter_values._replace_callable_function_parameters = True
-    sim = pybamm.Simulation(model, var_pts=var_pts, parameter_values=parameter_values)
-    #sim.solve([0, 3600], inputs=inputs)
-    #sim.mesh.add_ghost_meshes()
-    pybamm.set_logging_level("INFO")
-    sim.solve([0, 3600], inputs=inputs)
-
     # save mtk_str to file
     outfile = "./models/playground/model.jl"
     ic(outfile)
@@ -359,6 +378,21 @@ def solve_plot_generate(model, variables, current_input=False, include_q=True, n
         ic("writing outfile")
         f.write(mtk_str)
         ic("writing successful")
+    #print(mtk_str)
+
+
+    # Solve
+    parameter_values._replace_callable_function_parameters = True
+    for pushee, val in rhs_to_pop:
+        model.rhs[pushee] = val
+    for pushee, val in ic_to_pop:
+        model.initial_conditions[pushee] = val
+    sim = pybamm.Simulation(model, var_pts=var_pts, parameter_values=parameter_values)
+    #sim.solve([0, 3600], inputs=inputs)
+    #sim.mesh.add_ghost_meshes()
+    pybamm.set_logging_level("INFO")
+    sim.solve([0, 3600], inputs=inputs)
+
 
     # Plot
     # sim.plot(dep_vars)
@@ -380,7 +414,8 @@ def solve_plot_generate(model, variables, current_input=False, include_q=True, n
     return sim, mtk_str, variables
 
 
+#solve_plot_generate(*spm(), current_input=False, include_q=False)
 #solve_plot_generate(*spme(), current_input=False)
 #solve_plot_generate(*reduced_c(), current_input=False)
 #solve_plot_generate(*reduced_c_phi_j(), current_input=False)
-solve_plot_generate(*dfn(), current_input=False)
+#solve_plot_generate(*dfn(), current_input=False)

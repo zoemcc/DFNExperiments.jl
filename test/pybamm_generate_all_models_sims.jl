@@ -21,19 +21,20 @@ begin
     #models = [SPMModel(), SPMeModel()]
     #SPMnoRModel(), 
     all_models = [SPMModel(), ReducedCModel(), SPMeModel(), ReducedCPhiModel(), ReducedCPhiJModel(), DFNnoRModel(), DFNModel()]
-    num_pts = 200
-    large_interp_grid_lengths = 100
-    small_interp_grid_length = 100
+    num_pts = 10
+    large_interp_grid_lengths = 4
+    small_interp_grid_length = 4
     num_stochastic_samples_from_loss = 4
     current_input = false
+    include_q = false
     #model = all_models[1]
-    #for i in 1:5
-    j = 2
-    i = j
+    for i in 1:7
+    #j = 1
+    #i = j
     #for i in j:j
-    begin
+    #begin
         model = all_models[i]
-        include_q = DFNExperiments.include_q_model(model)
+        #include_q = DFNExperiments.include_q_model(model)
         models_dir = abspath(joinpath(@__DIR__, "..", "models"))
         model_str = pybamm_func_str(model)
         output_dir = joinpath(models_dir, "$(model_str)")

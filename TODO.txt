@@ -222,10 +222,14 @@ collapse the concatenation terms so that it's just one concatenation term and th
     !probably unnecessary now that the loss functions have a good test
 
 
+domain_decomposition stuff:
 
 !get rid of \ in \kappa_e function name 
 !make the caches in div/grad point to instantiated variables (did they used to? what did I mess up? they point to the old concat variables (c_e and phi_e), make them point to the right sub variable)
 !add _n, _s, _p suffices to cache variable names that are in lines that contain a _n, _s, _p and make sure that all defined cache variable lhs' have the suffix if they need it
-does it work correctly for the previous models or just dfn?
+!does it work correctly for the previous models or just dfn?
+make FastChainInterpolator use a Lux object instead
+
+
 
 

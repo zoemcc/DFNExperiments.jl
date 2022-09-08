@@ -2,103 +2,127 @@ begin
 using IfElse
 # ('negative particle',) -> r_n
 # ('positive particle',) -> r_p
-# ('negative electrode', 'separator', 'positive electrode') -> x
-@parameters t r_n r_p x
+# ('negative electrode',) -> x_n
+# ('separator',) -> x_s
+# ('positive electrode',) -> x_p
+@parameters t r_n r_p x_n x_s x_p
 independent_variables_to_pybamm_names = Dict(
   :t => "Time",
   :r_n => "negative particle",
   :r_p => "positive particle",
-  :x => "negative electrode",
+  :x_n => "negative electrode",
+  :x_s => "separator",
+  :x_p => "positive electrode",
 )
-# 'Discharge capacity [A.h]' -> Q_Ah
 # 'X-averaged negative particle concentration' -> c_s_n_xav
 # 'X-averaged positive particle concentration' -> c_s_p_xav
-# 'Electrolyte concentration' -> c_e
-@variables Q_Ah(..) c_s_n_xav(..) c_s_p_xav(..) c_e(..)
+# 'Negative electrolyte concentration' -> c_e_n
+# 'Separator electrolyte concentration' -> c_e_s
+# 'Positive electrolyte concentration' -> c_e_p
+@variables c_s_n_xav(..) c_s_p_xav(..) c_e_n(..) c_e_s(..) c_e_p(..)
 dependent_variables_to_pybamm_names = Dict(
-  :Q_Ah => "Discharge capacity [A.h]",
   :c_s_n_xav => "X-averaged negative particle concentration",
   :c_s_p_xav => "X-averaged positive particle concentration",
-  :c_e => "Electrolyte concentration",
+  :c_e_n => "Negative electrolyte concentration",
+  :c_e_s => "Separator electrolyte concentration",
+  :c_e_p => "Positive electrolyte concentration",
 )
 dependent_variables_to_dependencies = Dict(
-  :Q_Ah => (:t,),
   :c_s_n_xav => (:t, :r_n),
   :c_s_p_xav => (:t, :r_p),
-  :c_e => (:t, :x),
+  :c_e_n => (:t, :x_n),
+  :c_e_s => (:t, :x_s),
+  :c_e_p => (:t, :x_p),
 )
 Dt = Differential(t)
 Dr_n = Differential(r_n)
 Dr_p = Differential(r_p)
-Dx = Differential(x)
+Dx_n = Differential(x_n)
+Dx_s = Differential(x_s)
+Dx_p = Differential(x_p)
 
 # 'X-averaged negative particle concentration' equation
-cache_6261501377381600284 = 8.813457647415216 * (1 / r_n^2 * Dr_n(r_n^2 * Dr_n(c_s_n_xav(t, r_n))))
+cache_m4119150365269624523 = 8.813457647415216 * (1 / r_n^2 * Dr_n(r_n^2 * Dr_n(c_s_n_xav(t, r_n))))
 
 # 'X-averaged positive particle concentration' equation
-cache_2446094674774212635 = 22.598609352346717 * (1 / r_p^2 * Dr_p(r_p^2 * Dr_p(c_s_p_xav(t, r_p))))
+cache_5866437115522166420 = 22.598609352346717 * (1 / r_p^2 * Dr_p(r_p^2 * Dr_p(c_s_p_xav(t, r_p))))
 
 # 'Electrolyte concentration' equation
-
-function concatenation(x, n, s, p)
-   # A concatenation in the electrolyte domain
-   IfElse.ifelse(
-      x < 0.4444444444444445, n, IfElse.ifelse(
-         x < 0.5555555555555556, s, p
-      )
-   )
-end
 
 function D_e(c_e, T)
    5.34e-10 * exp(-0.00065 * c_e) * exp(14.941767670181717 - (4454.8880308646785 * 1.0 / T))
 end
 
-cache_m5123501641037885793 = concatenation(x, -589429731.3893579, -3587155110.512914, -589429731.3893579)
-cache_7398625095604158833 = concatenation(x, 0.1806862603261852 * x, 0.08030500458941565, 
-   (0.007232292579356106 - (0.007232292579356106 * x)) / 0.04002679875215723
-)
-cache_m3367080608234967436 = concatenation(x, 56.212339486148316, 0.0, -56.212339486148316)
-cache_2045246586871724539 = concatenation(x, 0.3, 1.0, 0.3)
-cache_1058782259849017510 = (((Dx(((cache_m5123501641037885793 * (D_e(c_e(t, x) * 1000.0, 298.15))) * Dx(c_e(t, x))) + cache_7398625095604158833)) / -0.008035880643729006) + cache_m3367080608234967436) / cache_2045246586871724539
+cache_5380421293040872985_n = -589429731.3893579
+cache_5380421293040872985_s = -3587155110.512914
+cache_5380421293040872985_p = -589429731.3893579
+cache_2434126157835956296_n = 
+   0.1806862603261852 * x_n
 
+cache_2434126157835956296_s = 
+   0.08030500458941565
 
+cache_2434126157835956296_p = 
+   (0.007232292579356106 - (0.007232292579356106 * x_p)) / 0.04002679875215723
+
+cache_2742393921021778050_n = 
+   56.212339486148316
+
+cache_2742393921021778050_s = 0.0
+cache_2742393921021778050_p = 
+   -56.212339486148316
+
+cache_7037718863933443715_n = 0.3
+cache_7037718863933443715_s = 1.0
+cache_7037718863933443715_p = 0.3
+cache_m9197988089807064229_n = (((Dx_n(((cache_5380421293040872985_n * (D_e(c_e_n(t, x_n) * 1000.0, 298.15))) * Dx_n(c_e_n(t, x_n))) + cache_2434126157835956296_n)) / -0.008035880643729006) + cache_2742393921021778050_n) / cache_7037718863933443715_n
+cache_m9197988089807064229_s = (((Dx_s(((cache_5380421293040872985_s * (D_e(c_e_s(t, x_s) * 1000.0, 298.15))) * Dx_s(c_e_s(t, x_s))) + cache_2434126157835956296_s)) / -0.008035880643729006) + cache_2742393921021778050_s) / cache_7037718863933443715_s
+cache_m9197988089807064229_p = (((Dx_p(((cache_5380421293040872985_p * (D_e(c_e_p(t, x_p) * 1000.0, 298.15))) * Dx_p(c_e_p(t, x_p))) + cache_2434126157835956296_p)) / -0.008035880643729006) + cache_2742393921021778050_p) / cache_7037718863933443715_p
 eqs = [
-   Dt(Q_Ah(t)) ~ 4.27249308415467,
-   Dt(c_s_n_xav(t, r_n)) ~ cache_6261501377381600284,
-   Dt(c_s_p_xav(t, r_p)) ~ cache_2446094674774212635,
-   Dt(c_e(t, x)) ~ cache_1058782259849017510,
+   Dt(c_s_n_xav(t, r_n)) ~ cache_m4119150365269624523,
+   Dt(c_s_p_xav(t, r_p)) ~ cache_5866437115522166420,
+   Dt(c_e_n(t, x_n)) ~ cache_m9197988089807064229_n,
+   Dt(c_e_s(t, x_s)) ~ cache_m9197988089807064229_s,
+   Dt(c_e_p(t, x_p)) ~ cache_m9197988089807064229_p,
 ]
 
 
 ics_bcs = [
    # initial conditions
-   Q_Ah(0) ~ 0.0,
    c_s_n_xav(0, r_n) ~ 0.8000000000000016,
    c_s_p_xav(0, r_p) ~ 0.6000000000000001,
-   c_e(0, x) ~ 1.0,
+   c_e_n(0, x_n) ~ 1.0,
+   c_e_s(0, x_s) ~ 1.0,
+   c_e_p(0, x_p) ~ 1.0,
    # boundary conditions
    Dr_n(c_s_n_xav(t, 0.0)) ~ 0.0,
    Dr_n(c_s_n_xav(t, 1.0)) ~ -0.14182855923368468,
    Dr_p(c_s_p_xav(t, 0.0)) ~ 0.0,
    Dr_p(c_s_p_xav(t, 1.0)) ~ 0.03237700710041634,
-   Dx(c_e(t, 0.0)) ~ 0.0,
-   Dx(c_e(t, 1.0)) ~ 0.0,
+   Dx_n(c_e_n(t, 0.0)) ~ 0.0,
+   c_e_n(t, 0.4444444444444445) ~ c_e_s(t, 0.4444444444444445),
+   c_e_p(t, 0.5555555555555556) ~ c_e_s(t, 0.5555555555555556),
+   Dx_p(c_e_p(t, 1.0)) ~ 0.0,
 ]
 
 t_domain = Interval(0.000,0.159)
 r_n_domain = Interval(0.0, 1.0)
 r_p_domain = Interval(0.0, 1.0)
-x_domain = Interval(0.0, 1.0)
+x_n_domain = Interval(0.0, 0.4444444444444445)
+x_s_domain = Interval(0.4444444444444445, 0.5555555555555556)
+x_p_domain = Interval(0.5555555555555556, 1.0)
 
 domains = [
    t in t_domain,
    r_n in r_n_domain,
    r_p in r_p_domain,
-   x in x_domain,
+   x_n in x_n_domain,
+   x_s in x_s_domain,
+   x_p in x_p_domain,
 ]
 
-ind_vars = [t, r_n, r_p, x]
-dep_vars = [Q_Ah(t), c_s_n_xav(t, r_n), c_s_p_xav(t, r_p), c_e(t, x)]
+ind_vars = [t, r_n, r_p, x_n, x_s, x_p]
+dep_vars = [c_s_n_xav(t, r_n), c_s_p_xav(t, r_p), c_e_n(t, x_n), c_e_s(t, x_s), c_e_p(t, x_p)]
 
 @named SPMe_pde_system = PDESystem(eqs, ics_bcs, domains, ind_vars, dep_vars)
 pde_system = SPMe_pde_system

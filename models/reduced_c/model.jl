@@ -1,60 +1,74 @@
 begin
 using IfElse
-# ('negative electrode', 'separator', 'positive electrode') -> x
-@parameters t x
+# ('negative electrode',) -> x_n
+# ('separator',) -> x_s
+# ('positive electrode',) -> x_p
+@parameters t x_n x_s x_p
 independent_variables_to_pybamm_names = Dict(
   :t => "Time",
-  :x => "negative electrode",
+  :x_n => "negative electrode",
+  :x_s => "separator",
+  :x_p => "positive electrode",
 )
-# 'Electrolyte concentration' -> c_e
-@variables c_e(..)
+# 'Electrolyte concentration neg' -> c_e_n
+# 'Electrolyte concentration sep' -> c_e_s
+# 'Electrolyte concentration pos' -> c_e_p
+@variables c_e_n(..) c_e_s(..) c_e_p(..)
 dependent_variables_to_pybamm_names = Dict(
-  :c_e => "Electrolyte concentration",
+  :c_e_n => "Electrolyte concentration neg",
+  :c_e_s => "Electrolyte concentration sep",
+  :c_e_p => "Electrolyte concentration pos",
 )
 dependent_variables_to_dependencies = Dict(
-  :c_e => (:t, :x),
+  :c_e_n => (:t, :x_n),
+  :c_e_s => (:t, :x_s),
+  :c_e_p => (:t, :x_p),
 )
 Dt = Differential(t)
-Dx = Differential(x)
+Dx_n = Differential(x_n)
+Dx_s = Differential(x_s)
+Dx_p = Differential(x_p)
 
 # 'Electrolyte concentration' equation
-
-function concatenation(x, n, s, p)
-   # A concatenation in the electrolyte domain
-   IfElse.ifelse(
-      x < 0.4444444444444445, n, IfElse.ifelse(
-         x < 0.5555555555555556, s, p
-      )
-   )
-end
-
-cache_m8587173813837221631 = concatenation(x, 2.25, 0.0, -2.25)
-cache_m5374597158501241961 = (Dx(Dx(c_e(t, x)))) + cache_m8587173813837221631
-
-
+cache_5220914418673774043_n = 2.25
+cache_5220914418673774043_s = 0.0
+cache_5220914418673774043_p = -2.25
+cache_141414454231725967_n = (Dx_n(Dx_n(c_e_n(t, x_n)))) + cache_5220914418673774043_n
+cache_141414454231725967_s = (Dx_s(Dx_s(c_e_s(t, x_s)))) + cache_5220914418673774043_s
+cache_141414454231725967_p = (Dx_p(Dx_p(c_e_p(t, x_p)))) + cache_5220914418673774043_p
 eqs = [
-   Dt(c_e(t, x)) ~ cache_m5374597158501241961,
+   Dt(c_e_n(t, x_n)) ~ cache_141414454231725967_n,
+   Dt(c_e_s(t, x_s)) ~ cache_141414454231725967_s,
+   Dt(c_e_p(t, x_p)) ~ cache_141414454231725967_p,
 ]
 
 
 ics_bcs = [
    # initial conditions
-   c_e(0, x) ~ 1.0,
+   c_e_n(0, x_n) ~ 1.0,
+   c_e_s(0, x_s) ~ 1.0,
+   c_e_p(0, x_p) ~ 1.0,
    # boundary conditions
-   Dx(c_e(t, 0.0)) ~ 0.0,
-   Dx(c_e(t, 1.0)) ~ 0.0,
+   Dx_n(c_e_n(t, 0.0)) ~ 0.0,
+   c_e_n(t, 0.4444444444444445) ~ c_e_s(t, 0.4444444444444445),
+   c_e_p(t, 0.5555555555555556) ~ c_e_s(t, 0.5555555555555556),
+   Dx_p(c_e_p(t, 1.0)) ~ 0.0,
 ]
 
 t_domain = Interval(0.000,1.000)
-x_domain = Interval(0.0, 1.0)
+x_n_domain = Interval(0.0, 0.4444444444444445)
+x_s_domain = Interval(0.4444444444444445, 0.5555555555555556)
+x_p_domain = Interval(0.5555555555555556, 1.0)
 
 domains = [
    t in t_domain,
-   x in x_domain,
+   x_n in x_n_domain,
+   x_s in x_s_domain,
+   x_p in x_p_domain,
 ]
 
-ind_vars = [t, x]
-dep_vars = [c_e(t, x)]
+ind_vars = [t, x_n, x_s, x_p]
+dep_vars = [c_e_n(t, x_n), c_e_s(t, x_s), c_e_p(t, x_p)]
 
 @named reduced_c_pde_system = PDESystem(eqs, ics_bcs, domains, ind_vars, dep_vars)
 pde_system = reduced_c_pde_system

@@ -36,13 +36,13 @@ struct SPMnoRModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::SPMnoRModel) = "spm_no_r"
-include_q_model(::SPMnoRModel) = true
+include_q_model(::SPMnoRModel) = false
 
 struct SPMModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::SPMModel) = "spm"
-include_q_model(::SPMModel) = true
+include_q_model(::SPMModel) = false
 
 
 struct ReducedCModel <: AbstractPyBaMMModel
@@ -56,7 +56,7 @@ struct SPMeModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::SPMeModel) = "spme"
-include_q_model(::SPMeModel) = true
+include_q_model(::SPMeModel) = false
 
 struct ReducedCPhiModel <: AbstractPyBaMMModel
 end
@@ -74,13 +74,13 @@ struct DFNnoRModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::DFNnoRModel) = "dfn_no_r"
-include_q_model(::DFNnoRModel) = true
+include_q_model(::DFNnoRModel) = false
 
 struct DFNModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::DFNModel) = "dfn"
-include_q_model(::DFNModel) = true
+include_q_model(::DFNModel) = false
 
 
 include("generate_py.jl")
@@ -114,7 +114,7 @@ function (fastchaininterpolator::FastChainInterpolator)(v, θ)
 end
 DiffEqFlux.initial_params(::FastChainInterpolator) = Float64[]
 
-function generate_sim_model_and_test(model::M; current_input=false, include_q=true, output_dir=nothing, num_pts=100, 
+function generate_sim_model_and_test(model::M; current_input=false, include_q=false, output_dir=nothing, num_pts=100, 
         large_interp_grid_length=1000, small_interp_grid_length=100, num_stochastic_samples_from_loss=1024, writemodel=true, writesimdata=true) where {M <: AbstractPyBaMMModel}
     model_str = pybamm_func_str(model)
     current_input_str = current_input ? "True" : "False" 
@@ -136,9 +136,6 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=tr
             write(f, mtk_str)
         end
     end
-    if true
-        return 1:20
-    end
     include(model_filename)
 
     #sol_data_json = sim.solution.save_data(variables=variables, to_format="json")
@@ -151,6 +148,7 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=tr
     @show dv_names
     @show dependent_variables_to_pybamm_names
     #@show keys(sol_data)
+    return 1:20
 
     dvs_interpolation_fastchain_datablob = map(dep_vars) do dv
         println("interpolating $(nameof(dv))")
