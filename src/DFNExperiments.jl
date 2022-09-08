@@ -2,6 +2,8 @@ module DFNExperiments
 
 using Requires
 using DiffEqFlux, Flux
+using Random
+using Lux
 using NeuralPDE, ModelingToolkit, Symbolics, DomainSets
 import ModelingToolkit: Interval, infimum, supremum
 using LabelledArrays
@@ -94,6 +96,52 @@ end
 
 include("plot_log.jl")
 
+"""
+    AbstractExplicitLayer
+
+Abstract Type for all Lux Layers
+
+Users implementing their custom layer, **must** implement
+
+  - `initialparameters(rng::AbstractRNG, layer::CustomAbstractExplicitLayer)` -- This
+    returns a `NamedTuple` containing the trainable parameters for the layer.
+  - `initialstates(rng::AbstractRNG, layer::CustomAbstractExplicitLayer)` -- This returns a
+    NamedTuple containing the current state for the layer. For most layers this is typically
+    empty. Layers that would potentially contain this include `BatchNorm`, `LSTM`, `GRU` etc.
+
+Optionally:
+
+  - `parameterlength(layer::CustomAbstractExplicitLayer)` -- These can be automatically
+    calculated, but it is recommended that the user defines these.
+  - `statelength(layer::CustomAbstractExplicitLayer)` -- These can be automatically
+    calculated, but it is recommended that the user defines these.
+
+See also [`AbstractExplicitContainerLayer`](@ref)
+"""
+
+struct LuxChainInterpolator{I} <: Lux.AbstractExplicitLayer
+    interpolator::I
+end
+
+Lux.initialparameters(::Random.AbstractRNG, ::LuxChainInterpolator) = (int=[1.0], )
+Lux.initialstates(::Random.AbstractRNG, ::LuxChainInterpolator) = NamedTuple()
+Lux.parameterlength(::LuxChainInterpolator) = 1
+Lux.statelength(::LuxChainInterpolator) = 0
+
+function (lux_chain_interpolator::LuxChainInterpolator)(x::AbstractArray, ps, st::NamedTuple)
+    if size(x, 1) > 2
+        # this uses RegularGridInterpolator which is an ND interpolator so it expects a vector in
+        inputs = [@view x[:, i] for i in 1:size(x, 2)]
+        output = lux_chain_interpolator.interpolator.(inputs)
+    else
+        # this uses 1-d or 2-d interpolators which expect a tuple of arguments
+        inputs = [@view x[[i], :] for i in 1:size(x, 1)]
+        output = lux_chain_interpolator.interpolator.(inputs...)
+    end
+    #@show output
+    (output, st)
+end
+
 struct FastChainInterpolator{I}
     interpolator::I
 end
@@ -148,11 +196,11 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
     @show dv_names
     @show dependent_variables_to_pybamm_names
     #@show keys(sol_data)
-    return 1:20
 
-    dvs_interpolation_fastchain_datablob = map(dep_vars) do dv
+    dvs_interpolation_luxchain_datablob = map(dep_vars) do dv
         println("interpolating $(nameof(dv))")
         dv_pybamm_name = dependent_variables_to_pybamm_names[nameof(dv)]
+        @show dv_pybamm_name
         dv_processed = sim.solution.__getitem__(dv_pybamm_name)
         dv_pybamm_interpolation_function = dv_processed._interpolation_function
         deps = dependent_variables_to_dependencies[nameof(dv)]
@@ -180,9 +228,9 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
         unscaled_iv_ranges, scaled_iv_ranges = iv_ranges_from_grid_length(large_interp_grid_length)
 
         unscaled_ivs_mat = reduce(hcat, map(collect, vec(collect(product(unscaled_iv_ranges...)))))
-        dv_pybamm_interpolator = FastChainInterpolator(dv_pybamm_interpolation_function)
-        dv_mat = dv_pybamm_interpolator(unscaled_ivs_mat, Float64[])
-        @show size(dv_mat), typeof(dv_mat), size(dv_mat[1])
+        dv_pybamm_interpolator = LuxChainInterpolator(dv_pybamm_interpolation_function)
+        dv_mat = dv_pybamm_interpolator(unscaled_ivs_mat, NamedTuple(), NamedTuple())[1]
+        @show size(dv_mat), typeof(dv_mat)
         dv_mat = first.(dv_mat)
         #if num_deps <= 2
             #dv_mat = first.(dv_mat)
@@ -193,15 +241,15 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
         @show size(dv_grid)
         @show size.(scaled_iv_ranges)
         #dv_grid = permutedims(reshape(dv_pybamm_interpolation_function[py_axis_name[num_deps + 1]], reverse(length.(iv_ranges))...), reverse(1:num_deps))
-        dv_interpolation = FastChainInterpolator(extrapolate(scale(interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), scaled_iv_ranges...), Line()))
+        dv_interpolation = LuxChainInterpolator(extrapolate(scale(interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), scaled_iv_ranges...), Line()))
         @show typeof(dv_interpolation)
 
-        dv_fastchain = FastChain(dv_interpolation)
+        dv_luxchain = Lux.Chain(dv_interpolation)
         unscaled_iv_ranges_small, scaled_iv_ranges_small = iv_ranges_from_grid_length(small_interp_grid_length)
         scaled_ivs_small_mat = reduce(hcat, map(collect, vec(collect(product(scaled_iv_ranges_small...)))))
-        dv_data_blob = reshape(dv_fastchain(scaled_ivs_small_mat, Float64[]), (length.(scaled_iv_ranges_small))...)
+        dv_data_blob = reshape(dv_luxchain(scaled_ivs_small_mat, NamedTuple(), NamedTuple())[1], (length.(scaled_iv_ranges_small))...)
 
-        (dv_interpolation, dv_fastchain, dv_data_blob)
+        (dv_interpolation, dv_luxchain, dv_data_blob)
     end
 
     ivs_range = map(pde_system.domain) do var_domain
@@ -211,7 +259,9 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
     @show ivs_range
     @show typeof(ivs_range)
 
-    dvs_interpolation, dvs_fastchain, dvs_data_blob = unzip(dvs_interpolation_fastchain_datablob)
+    dvs_interpolation, dvs_luxchain, dvs_data_blob = unzip(dvs_interpolation_luxchain_datablob)
+    @show dvs_interpolation
+    @show dvs_luxchain
     @show size(dvs_data_blob)
     @show typeof(dvs_data_blob)
 
@@ -241,35 +291,20 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
     end
     sim_data_nt = read_sim_data(sim_filename)
 
+
     println("generating PINN discretization from the simulation interpolation to test against")
     strategy =  NeuralPDE.StochasticTraining(num_stochastic_samples_from_loss, num_stochastic_samples_from_loss)
-    discretization = NeuralPDE.PhysicsInformedNN(dvs_fastchain, strategy)
-    
-    if !isdefined(DFNExperiments, :subdomain_relations)
-        DFNExperiments.subdomain_relations = nothing
-    end
-    if !isdefined(DFNExperiments, :eqs_integration_domains)
-        DFNExperiments.eqs_integration_domains = nothing
-    end
-    if !isdefined(DFNExperiments, :ics_bcs_integration_domains)
-        DFNExperiments.ics_bcs_integration_domains = nothing
-    end
+    discretization = NeuralPDE.PhysicsInformedNN(dvs_luxchain, strategy)
 
-    symb_modded_pde_system = NeuralPDE.symbolic_discretize(pde_system, discretization; 
-        subdomain_relations=DFNExperiments.subdomain_relations, 
-        eqs_integration_domains=DFNExperiments.eqs_integration_domains,
-        ics_bcs_integration_domains=DFNExperiments.ics_bcs_integration_domains,
-    )
-    prob = NeuralPDE.discretize(pde_system, discretization;
-        subdomain_relations=DFNExperiments.subdomain_relations, 
-        eqs_integration_domains=DFNExperiments.eqs_integration_domains,
-        ics_bcs_integration_domains=DFNExperiments.ics_bcs_integration_domains,
-    )
-    @show DFNExperiments.subdomain_relations
-    @show DFNExperiments.eqs_integration_domains
-    @show DFNExperiments.ics_bcs_integration_domains
+    pinnrep = NeuralPDE.symbolic_discretize(pde_system, discretization)
+    flat_init_params = pinnrep.flat_init_params
+    prob = NeuralPDE.discretize(pde_system, discretization)
+    #@show prob
+    #@show typeof(prob)
+    #@show prob.f
 
-    total_loss = prob.f(Float64[], Float64[])
+    total_loss = prob.f(flat_init_params, Float64[])
+    @show total_loss
 
 
     (sim_data=sim_data_nt, pde_system=pde_system, sim=sim, variables=variables, 
@@ -277,10 +312,10 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
     dependent_variables_to_pybamm_names=dependent_variables_to_pybamm_names,
     dependent_variables_to_dependencies=dependent_variables_to_dependencies,
     dvs_interpolation=dvs_interpolation,
-    dvs_fastchain=dvs_fastchain,
+    dvs_luxchain=dvs_luxchain,
     prob=prob,
     total_loss=total_loss,
-    symb_modded_pde_system=symb_modded_pde_system,
+    pinnrep=pinnrep,
     discretization=discretization)
     #"""
     #(sim_data=sim_data_nt, pde_system=pde_system, sim=sim, variables=variables, 
@@ -288,7 +323,7 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
     #dependent_variables_to_pybamm_names=dependent_variables_to_pybamm_names,
     #dependent_variables_to_dependencies=dependent_variables_to_dependencies,
     #dvs_interpolation=dvs_interpolation,
-    #dvs_fastchain=dvs_fastchain,)
+    #dvs_luxchain=dvs_luxchain,)
     #"""
 end
 

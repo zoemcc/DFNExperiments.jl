@@ -1,4 +1,4 @@
-rebuild = true
+rebuild = false
 if rebuild
     ENV["PYTHON"] = joinpath(ENV["ANACONDA_LOCATION"], "envs", "pybamm_dev", "bin", "python")
     using Pkg
@@ -21,18 +21,17 @@ begin
     #models = [SPMModel(), SPMeModel()]
     #SPMnoRModel(), 
     all_models = [SPMModel(), ReducedCModel(), SPMeModel(), ReducedCPhiModel(), ReducedCPhiJModel(), DFNnoRModel(), DFNModel()]
-    num_pts = 10
-    large_interp_grid_lengths = 4
-    small_interp_grid_length = 4
-    num_stochastic_samples_from_loss = 4
+    num_pts = 100
+    large_interp_grid_lengths = 400
+    small_interp_grid_length = 100
+    num_stochastic_samples_from_loss = 1024
     current_input = false
     include_q = false
     #model = all_models[1]
-    for i in 1:7
-    #j = 1
-    #i = j
-    #for i in j:j
-    #begin
+    j = 1
+    i = j
+    #for i in 1:7
+    begin
         model = all_models[i]
         #include_q = DFNExperiments.include_q_model(model)
         models_dir = abspath(joinpath(@__DIR__, "..", "models"))
@@ -48,7 +47,7 @@ begin
         #sim_data, pde_system, sim, variables = generate_sim_model(model; current_input=current_input, output_dir=output_dir, num_pts=num_pts)
         sim_data, pde_system, sim, variables, independent_variables_to_pybamm_names, 
             dependent_variables_to_pybamm_names, dependent_variables_to_dependencies, dvs_interpolation,
-            dvs_fastchain, prob, total_loss, symb_modded_pde_system, discretization = 
+            dvs_fastchain, prob, total_loss, pinnrep, discretization = 
                 generate_sim_model_and_test(model; current_input=current_input, include_q=include_q, output_dir=output_dir, num_pts=num_pts,
                     large_interp_grid_length=large_interp_grid_lengths, small_interp_grid_length=small_interp_grid_length,
                     num_stochastic_samples_from_loss=num_stochastic_samples_from_loss,
