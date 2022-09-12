@@ -26,6 +26,10 @@ Base.nameof(term::Term{Real, Base.ImmutableDict{DataType, Any}}) = (nameof ∘ o
 
 pybamm_func_str(::AbstractPyBaMMModel) = throw("Not implemented")
 include_q_model(::AbstractPyBaMMModel) = throw("Not implemented")
+num_pts_validation(::AbstractPyBaMMModel) = throw("Not implemented")
+large_interp_grid_length_validation(::AbstractPyBaMMModel) = throw("Not implemented")
+small_interp_grid_length_validation(::AbstractPyBaMMModel) = throw("Not implemented")
+num_stochastic_samples_from_loss_validation(::AbstractPyBaMMModel) = throw("Not implemented")
 
 get_model_dir(model::AbstractPyBaMMModel) = abspath(joinpath(@__DIR__, "..", "models", "$(pybamm_func_str(model))"))
 function load_model(model::AbstractPyBaMMModel)
@@ -39,12 +43,20 @@ end
 
 pybamm_func_str(::SPMnoRModel) = "spm_no_r"
 include_q_model(::SPMnoRModel) = false
+num_pts_validation(::SPMnoRModel) = 4000
+large_interp_grid_length_validation(::SPMnoRModel) = 1000
+small_interp_grid_length_validation(::SPMnoRModel) = 400
+num_stochastic_samples_from_loss_validation(::SPMnoRModel) = 4096
 
 struct SPMModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::SPMModel) = "spm"
 include_q_model(::SPMModel) = false
+num_pts_validation(::SPMModel) = 4000
+large_interp_grid_length_validation(::SPMModel) = 1000
+small_interp_grid_length_validation(::SPMModel) = 400
+num_stochastic_samples_from_loss_validation(::SPMModel) = 4096
 
 
 struct ReducedCModel <: AbstractPyBaMMModel
@@ -52,6 +64,10 @@ end
 
 pybamm_func_str(::ReducedCModel) = "reduced_c"
 include_q_model(::ReducedCModel) = false
+num_pts_validation(::ReducedCModel) = 4000
+large_interp_grid_length_validation(::ReducedCModel) = 1000
+small_interp_grid_length_validation(::ReducedCModel) = 400
+num_stochastic_samples_from_loss_validation(::ReducedCModel) = 4096
 
 
 struct SPMeModel <: AbstractPyBaMMModel
@@ -59,30 +75,50 @@ end
 
 pybamm_func_str(::SPMeModel) = "spme"
 include_q_model(::SPMeModel) = false
+num_pts_validation(::SPMeModel) = 4000
+large_interp_grid_length_validation(::SPMeModel) = 1000
+small_interp_grid_length_validation(::SPMeModel) = 400
+num_stochastic_samples_from_loss_validation(::SPMeModel) = 4096
 
 struct ReducedCPhiModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::ReducedCPhiModel) = "reduced_c_phi"
 include_q_model(::ReducedCPhiModel) = false
+num_pts_validation(::ReducedCPhiModel) = 4000
+large_interp_grid_length_validation(::ReducedCPhiModel) = 1000
+small_interp_grid_length_validation(::ReducedCPhiModel) = 400
+num_stochastic_samples_from_loss_validation(::ReducedCPhiModel) = 4096
 
 struct ReducedCPhiJModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::ReducedCPhiJModel) = "reduced_c_phi_j"
 include_q_model(::ReducedCPhiJModel) = false
+num_pts_validation(::ReducedCPhiJModel) = 4000
+large_interp_grid_length_validation(::ReducedCPhiJModel) = 1000
+small_interp_grid_length_validation(::ReducedCPhiJModel) = 400
+num_stochastic_samples_from_loss_validation(::ReducedCPhiJModel) = 4096
 
 struct DFNnoRModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::DFNnoRModel) = "dfn_no_r"
 include_q_model(::DFNnoRModel) = false
+num_pts_validation(::DFNnoRModel) = 1000
+large_interp_grid_length_validation(::DFNnoRModel) = 600
+small_interp_grid_length_validation(::DFNnoRModel) = 400
+num_stochastic_samples_from_loss_validation(::DFNnoRModel) = 4096
 
 struct DFNModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::DFNModel) = "dfn"
 include_q_model(::DFNModel) = false
+num_pts_validation(::DFNModel) = 100
+large_interp_grid_length_validation(::DFNModel) = 60
+small_interp_grid_length_validation(::DFNModel) = 30
+num_stochastic_samples_from_loss_validation(::DFNModel) = 4096
 
 
 include("generate_py.jl")
@@ -331,6 +367,9 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
     flat_init_params = pinnrep.flat_init_params
     @show flat_init_params
 
+    eq_fake = pde_system.dvs[1] ~ pde_system.dvs[1]
+    ic_bc_fake = pde_system.dvs[1] ~ pde_system.dvs[1]
+
     eq_loss_certs = []
     for (i, eq) in enumerate(eqs)
         println("generating loss for equation $i")
@@ -438,6 +477,7 @@ export AbstractApplyFuncType, ParameterizedMatrixApplyFuncType, VectorOfParamete
 export MultiDimensionalFunction, cartesian_product
 export get_eval_network_at_sim_data_func, get_cb_func, get_plot_function, do_plot
 export SPMnoRModel, SPMModel, ReducedCModel, SPMeModel, ReducedCPhiModel, ReducedCPhiJModel, DFNnoRModel, DFNModel
+export num_pts_validation, large_interp_grid_length_validation, small_interp_grid_length_validation, num_stochastic_samples_from_loss_validation
 
 
 end

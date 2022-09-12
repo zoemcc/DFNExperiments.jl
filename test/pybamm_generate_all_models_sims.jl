@@ -23,26 +23,35 @@ begin
     all_models = [SPMModel(), ReducedCModel(), SPMeModel(), ReducedCPhiModel(), ReducedCPhiJModel(), DFNnoRModel(), DFNModel()]
     #num_pts = 4000
     #num_pts = 1000
-    num_pts = 100
-    #large_interp_grid_lengths = 1000
-    #large_interp_grid_lengths = 400
-    large_interp_grid_lengths = 40
+    #num_pts = 100
+    #large_interp_grid_length = 1000
+    #large_interp_grid_length = 400
+    #large_interp_grid_length = 40
+    #small_interp_grid_length = 400
     #small_interp_grid_length = 100
-    #small_interp_grid_length = 100
-    small_interp_grid_length = 30
+    #small_interp_grid_length = 30
     #num_stochastic_samples_from_loss = 1024
-    num_stochastic_samples_from_loss = 1024
+    #num_stochastic_samples_from_loss = 4096
     current_input = false
     include_q = false
     #model = all_models[1]
     #j = 4
     #i = j
+    # 5
     for i in 7:7
     #begin
         model = all_models[i]
         #include_q = DFNExperiments.include_q_model(model)
         models_dir = abspath(joinpath(@__DIR__, "..", "models"))
         model_str = pybamm_func_str(model)
+        num_pts = num_pts_validation(model)
+        large_interp_grid_length = large_interp_grid_length_validation(model)
+        small_interp_grid_length = small_interp_grid_length_validation(model)
+        num_stochastic_samples_from_loss = num_stochastic_samples_from_loss_validation(model)
+        @show num_pts
+        @show large_interp_grid_length
+        @show small_interp_grid_length
+        @show num_stochastic_samples_from_loss
         output_dir = joinpath(models_dir, "$(model_str)")
         model_file = joinpath(output_dir, "model.jl")
         loss_file = joinpath(output_dir, "loss_certificate.txt")
@@ -56,7 +65,7 @@ begin
             dependent_variables_to_pybamm_names, dependent_variables_to_dependencies, dvs_interpolation,
             dvs_fastchain, prob, total_loss, pinnrep, discretization = 
                 generate_sim_model_and_test(model; current_input=current_input, include_q=include_q, output_dir=output_dir, num_pts=num_pts,
-                    large_interp_grid_length=large_interp_grid_lengths, small_interp_grid_length=small_interp_grid_length,
+                    large_interp_grid_length=large_interp_grid_length, small_interp_grid_length=small_interp_grid_length,
                     num_stochastic_samples_from_loss=num_stochastic_samples_from_loss,
                     writemodel=writemodel, writesimdata=writesimdata
                     )

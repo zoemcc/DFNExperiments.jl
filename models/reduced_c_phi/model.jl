@@ -39,27 +39,27 @@ Dx_s = Differential(x_s)
 Dx_p = Differential(x_p)
 
 # 'Electrolyte concentration' equation
-cache_2342231486479082649_n = 2.25
-cache_2342231486479082649_s = 0.0
-cache_2342231486479082649_p = -2.25
-cache_6108101611517005270_n = (Dx_n(Dx_n(c_e_n(t, x_n)))) + cache_2342231486479082649_n
-cache_6108101611517005270_s = (Dx_s(Dx_s(c_e_s(t, x_s)))) + cache_2342231486479082649_s
-cache_6108101611517005270_p = (Dx_p(Dx_p(c_e_p(t, x_p)))) + cache_2342231486479082649_p
+cache_m2931369082656184876_n = 2.25
+cache_m2931369082656184876_s = 0.0
+cache_m2931369082656184876_p = -2.25
+cache_m3278440996113585217_n = (Dx_n(Dx_n(c_e_n(t, x_n)))) + cache_m2931369082656184876_n
+cache_m3278440996113585217_s = (Dx_s(Dx_s(c_e_s(t, x_s)))) + cache_m2931369082656184876_s
+cache_m3278440996113585217_p = (Dx_p(Dx_p(c_e_p(t, x_p)))) + cache_m2931369082656184876_p
 
 # 'Electrolyte potential' equation
-cache_2342231486479082649_n = 2.25
-cache_2342231486479082649_s = 0.0
-cache_2342231486479082649_p = -2.25
-cache_8603744982470494737_n = (Dx_n(Dx_n(c_e_n(t, x_n)) / c_e_n(t, x_n) - Dx_n(phi_e_n(t, x_n)))) - cache_2342231486479082649_n
-cache_8603744982470494737_s = (Dx_s(Dx_s(c_e_s(t, x_s)) / c_e_s(t, x_s) - Dx_s(phi_e_s(t, x_s)))) - cache_2342231486479082649_s
-cache_8603744982470494737_p = (Dx_p(Dx_p(c_e_p(t, x_p)) / c_e_p(t, x_p) - Dx_p(phi_e_p(t, x_p)))) - cache_2342231486479082649_p
+cache_m2931369082656184876_n = 2.25
+cache_m2931369082656184876_s = 0.0
+cache_m2931369082656184876_p = -2.25
+cache_m6966217625792079127_n = (Dx_n(Dx_n(c_e_n(t, x_n)) / c_e_n(t, x_n) - Dx_n(phi_e_n(t, x_n)))) - cache_m2931369082656184876_n
+cache_m6966217625792079127_s = (Dx_s(Dx_s(c_e_s(t, x_s)) / c_e_s(t, x_s) - Dx_s(phi_e_s(t, x_s)))) - cache_m2931369082656184876_s
+cache_m6966217625792079127_p = (Dx_p(Dx_p(c_e_p(t, x_p)) / c_e_p(t, x_p) - Dx_p(phi_e_p(t, x_p)))) - cache_m2931369082656184876_p
 eqs = [
-   Dt(c_e_n(t, x_n)) ~ cache_6108101611517005270_n,
-   Dt(c_e_s(t, x_s)) ~ cache_6108101611517005270_s,
-   Dt(c_e_p(t, x_p)) ~ cache_6108101611517005270_p,
-   0 ~ cache_8603744982470494737_n,
-   0 ~ cache_8603744982470494737_s,
-   0 ~ cache_8603744982470494737_p,
+   Dt(c_e_n(t, x_n)) ~ cache_m3278440996113585217_n,
+   Dt(c_e_s(t, x_s)) ~ cache_m3278440996113585217_s,
+   Dt(c_e_p(t, x_p)) ~ cache_m3278440996113585217_p,
+   0 ~ cache_m6966217625792079127_n,
+   0 ~ cache_m6966217625792079127_s,
+   0 ~ cache_m6966217625792079127_p,
 ]
 
 
@@ -68,9 +68,6 @@ ics_bcs = [
    c_e_n(0, x_n) ~ 1.0,
    c_e_s(0, x_s) ~ 1.0,
    c_e_p(0, x_p) ~ 1.0,
-   phi_e_n(0, x_n) ~ 0.0,
-   phi_e_s(0, x_s) ~ 0.0,
-   phi_e_p(0, x_p) ~ 0.0,
    # boundary conditions
    Dx_n(c_e_n(t, 0.0)) ~ 0.0,
    c_e_n(t, 0.4444444444444445) ~ c_e_s(t, 0.4444444444444445),

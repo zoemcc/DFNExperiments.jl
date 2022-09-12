@@ -1,0 +1,45 @@
+total_loss: 0.0027236728499954515
+
+eq losses:
+
+eq 1:
+Differential(t)(c_e_n(t, x_n)) ~ 2.25 + Differential(x_n)(Differential(x_n)(c_e_n(t, x_n)))
+loss: 0.0005656840568082958
+
+eq 2:
+Differential(t)(c_e_s(t, x_s)) ~ Differential(x_s)(Differential(x_s)(c_e_s(t, x_s)))
+loss: 0.0007947083556960562
+
+eq 3:
+Differential(t)(c_e_p(t, x_p)) ~ Differential(x_p)(Differential(x_p)(c_e_p(t, x_p))) - 2.25
+loss: 0.0005362506284442951
+
+ic bc losses:
+
+ic_bc 1:
+c_e_n(0, x_n) ~ 1.0
+loss: 1.8073648821858966e-32
+
+ic_bc 2:
+c_e_s(0, x_s) ~ 1.0
+loss: 1.820605650553559e-32
+
+ic_bc 3:
+c_e_p(0, x_p) ~ 1.0
+loss: 2.1203284981488225e-32
+
+ic_bc 4:
+Differential(x_n)(c_e_n(t, 0.0)) ~ 0.0
+loss: 5.295068844704944e-8
+
+ic_bc 5:
+c_e_n(t, 0.4444444444444445) ~ c_e_s(t, 0.4444444444444445)
+loss: 1.8954226555796798e-16
+
+ic_bc 6:
+c_e_p(t, 0.5555555555555556) ~ c_e_s(t, 0.5555555555555556)
+loss: 1.9020904071335313e-16
+
+ic_bc 7:
+Differential(x_p)(c_e_p(t, 1.0)) ~ 0.0
+loss: 5.2519939874621505e-8

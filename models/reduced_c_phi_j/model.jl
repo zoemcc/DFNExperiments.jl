@@ -45,43 +45,43 @@ Dx_s = Differential(x_s)
 Dx_p = Differential(x_p)
 
 # 'Electrolyte concentration' equation
-cache_m60250201308136499_n = 
+cache_m5827855796536743316_n = 
    (c_e_n(t, x_n) ^ 0.5) * (sinh((phi_s_n(t, x_n) - phi_e_n(t, x_n)) + 1.0))
 
-cache_m60250201308136499_s = 0.0
-cache_m60250201308136499_p = 
+cache_m5827855796536743316_s = 0.0
+cache_m5827855796536743316_p = 
    (c_e_p(t, x_p) ^ 0.5) * (sinh((phi_s_p(t, x_p) - phi_e_p(t, x_p)) - 4.0))
 
-cache_m5592360869635948051_n = (Dx_n(Dx_n(c_e_n(t, x_n)))) + cache_m60250201308136499_n
-cache_m5592360869635948051_s = (Dx_s(Dx_s(c_e_s(t, x_s)))) + cache_m60250201308136499_s
-cache_m5592360869635948051_p = (Dx_p(Dx_p(c_e_p(t, x_p)))) + cache_m60250201308136499_p
+cache_6892310476878662066_n = (Dx_n(Dx_n(c_e_n(t, x_n)))) + cache_m5827855796536743316_n
+cache_6892310476878662066_s = (Dx_s(Dx_s(c_e_s(t, x_s)))) + cache_m5827855796536743316_s
+cache_6892310476878662066_p = (Dx_p(Dx_p(c_e_p(t, x_p)))) + cache_m5827855796536743316_p
 
 # 'Electrolyte potential' equation
-cache_m60250201308136499_n = 
+cache_m5827855796536743316_n = 
    (c_e_n(t, x_n) ^ 0.5) * (sinh((phi_s_n(t, x_n) - phi_e_n(t, x_n)) + 1.0))
 
-cache_m60250201308136499_s = 0.0
-cache_m60250201308136499_p = 
+cache_m5827855796536743316_s = 0.0
+cache_m5827855796536743316_p = 
    (c_e_p(t, x_p) ^ 0.5) * (sinh((phi_s_p(t, x_p) - phi_e_p(t, x_p)) - 4.0))
 
-cache_m7299186829565566222_n = (Dx_n(Dx_n(c_e_n(t, x_n)) / c_e_n(t, x_n) - Dx_n(phi_e_n(t, x_n)))) - cache_m60250201308136499_n
-cache_m7299186829565566222_s = (Dx_s(Dx_s(c_e_s(t, x_s)) / c_e_s(t, x_s) - Dx_s(phi_e_s(t, x_s)))) - cache_m60250201308136499_s
-cache_m7299186829565566222_p = (Dx_p(Dx_p(c_e_p(t, x_p)) / c_e_p(t, x_p) - Dx_p(phi_e_p(t, x_p)))) - cache_m60250201308136499_p
+cache_m4342364842811107924_n = (Dx_n(Dx_n(c_e_n(t, x_n)) / c_e_n(t, x_n) - Dx_n(phi_e_n(t, x_n)))) - cache_m5827855796536743316_n
+cache_m4342364842811107924_s = (Dx_s(Dx_s(c_e_s(t, x_s)) / c_e_s(t, x_s) - Dx_s(phi_e_s(t, x_s)))) - cache_m5827855796536743316_s
+cache_m4342364842811107924_p = (Dx_p(Dx_p(c_e_p(t, x_p)) / c_e_p(t, x_p) - Dx_p(phi_e_p(t, x_p)))) - cache_m5827855796536743316_p
 
 # 'Negative electrode potential' equation
-cache_m2876680377232055185 = (Dx_n(Dx_n(phi_s_n(t, x_n)))) + ((c_e_n(t, x_n) ^ 0.5) * (sinh((phi_s_n(t, x_n) - phi_e_n(t, x_n)) + 1.0)))
+cache_2498541782557845750 = (Dx_n(Dx_n(phi_s_n(t, x_n)))) + ((c_e_n(t, x_n) ^ 0.5) * (sinh((phi_s_n(t, x_n) - phi_e_n(t, x_n)) + 1.0)))
 
 # 'Positive electrode potential' equation
-cache_667528666892368849 = (Dx_p(Dx_p(phi_s_p(t, x_p)))) + ((c_e_p(t, x_p) ^ 0.5) * (sinh((phi_s_p(t, x_p) - phi_e_p(t, x_p)) - 4.0)))
+cache_7502693045896189232 = (Dx_p(Dx_p(phi_s_p(t, x_p)))) + ((c_e_p(t, x_p) ^ 0.5) * (sinh((phi_s_p(t, x_p) - phi_e_p(t, x_p)) - 4.0)))
 eqs = [
-   Dt(c_e_n(t, x_n)) ~ cache_m5592360869635948051_n,
-   Dt(c_e_s(t, x_s)) ~ cache_m5592360869635948051_s,
-   Dt(c_e_p(t, x_p)) ~ cache_m5592360869635948051_p,
-   0 ~ cache_m7299186829565566222_n,
-   0 ~ cache_m7299186829565566222_s,
-   0 ~ cache_m7299186829565566222_p,
-   0 ~ cache_m2876680377232055185,
-   0 ~ cache_667528666892368849,
+   Dt(c_e_n(t, x_n)) ~ cache_6892310476878662066_n,
+   Dt(c_e_s(t, x_s)) ~ cache_6892310476878662066_s,
+   Dt(c_e_p(t, x_p)) ~ cache_6892310476878662066_p,
+   0 ~ cache_m4342364842811107924_n,
+   0 ~ cache_m4342364842811107924_s,
+   0 ~ cache_m4342364842811107924_p,
+   0 ~ cache_2498541782557845750,
+   0 ~ cache_7502693045896189232,
 ]
 
 
@@ -90,11 +90,6 @@ ics_bcs = [
    c_e_n(0, x_n) ~ 1.0,
    c_e_s(0, x_s) ~ 1.0,
    c_e_p(0, x_p) ~ 1.0,
-   phi_e_n(0, x_n) ~ 0.0,
-   phi_e_s(0, x_s) ~ 0.0,
-   phi_e_p(0, x_p) ~ 0.0,
-   phi_s_n(0, x_n) ~ 0.0,
-   phi_s_p(0, x_p) ~ 2.0,
    # boundary conditions
    Dx_n(c_e_n(t, 0.0)) ~ 0.0,
    c_e_n(t, 0.4444444444444445) ~ c_e_s(t, 0.4444444444444445),

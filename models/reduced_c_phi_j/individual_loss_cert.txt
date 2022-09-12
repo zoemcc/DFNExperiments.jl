@@ -1,0 +1,97 @@
+total_loss: 0.0037699946407263227
+
+eq losses:
+
+eq 1:
+Differential(t)(c_e_n(t, x_n)) ~ (c_e_n(t, x_n)^0.5)*sinh(1.0 + phi_s_n(t, x_n) - phi_e_n(t, x_n)) + Differential(x_n)(Differential(x_n)(c_e_n(t, x_n)))
+loss: 0.0007282782261233208
+
+eq 2:
+Differential(t)(c_e_s(t, x_s)) ~ Differential(x_s)(Differential(x_s)(c_e_s(t, x_s)))
+loss: 0.0010869297375340678
+
+eq 3:
+Differential(t)(c_e_p(t, x_p)) ~ (c_e_p(t, x_p)^0.5)*sinh(phi_s_p(t, x_p) - 4.0 - phi_e_p(t, x_p)) + Differential(x_p)(Differential(x_p)(c_e_p(t, x_p)))
+loss: 0.0007225740481009806
+
+eq 4:
+0 ~ Differential(x_n)(Differential(x_n)(c_e_n(t, x_n)) / c_e_n(t, x_n) - Differential(x_n)(phi_e_n(t, x_n))) - (c_e_n(t, x_n)^0.5)*sinh(1.0 + phi_s_n(t, x_n) - phi_e_n(t, x_n))
+loss: 5.8681925232393857e-5
+
+eq 5:
+0 ~ Differential(x_s)(Differential(x_s)(c_e_s(t, x_s)) / c_e_s(t, x_s) - Differential(x_s)(phi_e_s(t, x_s)))
+loss: 1.4253648853740078e-6
+
+eq 6:
+0 ~ Differential(x_p)(Differential(x_p)(c_e_p(t, x_p)) / c_e_p(t, x_p) - Differential(x_p)(phi_e_p(t, x_p))) - (c_e_p(t, x_p)^0.5)*sinh(phi_s_p(t, x_p) - 4.0 - phi_e_p(t, x_p))
+loss: 0.0001286936928942072
+
+eq 7:
+0 ~ (c_e_n(t, x_n)^0.5)*sinh(1.0 + phi_s_n(t, x_n) - phi_e_n(t, x_n)) + Differential(x_n)(Differential(x_n)(phi_s_n(t, x_n)))
+loss: 9.822357555207896e-5
+
+eq 8:
+0 ~ (c_e_p(t, x_p)^0.5)*sinh(phi_s_p(t, x_p) - 4.0 - phi_e_p(t, x_p)) + Differential(x_p)(Differential(x_p)(phi_s_p(t, x_p)))
+loss: 0.00016900885225721543
+
+ic bc losses:
+
+ic_bc 1:
+c_e_n(0, x_n) ~ 1.0
+loss: 1.8654437070713242e-32
+
+ic_bc 2:
+c_e_s(0, x_s) ~ 1.0
+loss: 1.8416705093202943e-32
+
+ic_bc 3:
+c_e_p(0, x_p) ~ 1.0
+loss: 2.0138004980999035e-32
+
+ic_bc 4:
+Differential(x_n)(c_e_n(t, 0.0)) ~ 0.0
+loss: 2.819465811681763e-8
+
+ic_bc 5:
+c_e_n(t, 0.4444444444444445) ~ c_e_s(t, 0.4444444444444445)
+loss: 3.4533133668272594e-16
+
+ic_bc 6:
+c_e_p(t, 0.5555555555555556) ~ c_e_s(t, 0.5555555555555556)
+loss: 4.517633280620842e-16
+
+ic_bc 7:
+Differential(x_p)(c_e_p(t, 1.0)) ~ 0.0
+loss: 2.3749854429478e-8
+
+ic_bc 8:
+Differential(x_n)(phi_e_n(t, 0.0)) ~ 0.0
+loss: 1.0137529131234013e-7
+
+ic_bc 9:
+phi_e_n(t, 0.4444444444444445) ~ phi_e_s(t, 0.4444444444444445)
+loss: 1.5155368418457637e-15
+
+ic_bc 10:
+phi_e_p(t, 0.5555555555555556) ~ phi_e_s(t, 0.5555555555555556)
+loss: 1.6835948481585649e-15
+
+ic_bc 11:
+Differential(x_p)(phi_e_p(t, 1.0)) ~ 0.0
+loss: 1.3719403936943624e-7
+
+ic_bc 12:
+phi_s_n(t, 0.0) ~ 0.0
+loss: 1.0956207207867619e-16
+
+ic_bc 13:
+Differential(x_n)(phi_s_n(t, 0.4444444444444445)) ~ 0.0
+loss: 1.1447200483415334e-7
+
+ic_bc 14:
+Differential(x_p)(phi_s_p(t, 0.5555555555555556)) ~ 0.0
+loss: 1.493371454083779e-7
+
+ic_bc 15:
+Differential(x_p)(phi_s_p(t, 1.0)) ~ 1.0
+loss: 3.019240165559944e-8

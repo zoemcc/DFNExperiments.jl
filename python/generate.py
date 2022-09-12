@@ -433,5 +433,5 @@ def solve_plot_generate(model, variables, current_input=False, include_q=False, 
 #solve_plot_generate(*spm(), current_input=False, include_q=False)
 #solve_plot_generate(*spme(), current_input=False)
 #solve_plot_generate(*reduced_c(), current_input=False)
-#solve_plot_generate(*reduced_c_phi_j(), current_input=False)
+#solve_plot_generate(*reduced_c_phi(), current_input=False)
 #solve_plot_generate(*dfn(), current_input=False)
