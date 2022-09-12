@@ -129,14 +129,24 @@ Lux.parameterlength(::LuxChainInterpolator) = 1
 Lux.statelength(::LuxChainInterpolator) = 0
 
 function (lux_chain_interpolator::LuxChainInterpolator)(x::AbstractArray, ps, st::NamedTuple)
-    if size(x, 1) > 2
+    if !(typeof(lux_chain_interpolator.interpolator) <: AbstractInterpolation) && size(x, 1) > 2 
         # this uses RegularGridInterpolator which is an ND interpolator so it expects a vector in
-        inputs = [@view x[:, i] for i in 1:size(x, 2)]
+        #inputs = [@view x[:, i] for i in 1:size(x, 2)]
+        inputs = [reverse(x[:, i]) for i in 1:size(x, 2)]
+        #@show inputs
+        #@show typeof(inputs), size(inputs)
         output = lux_chain_interpolator.interpolator.(inputs)
+        #@show typeof(output), size(output)
+        #@show output
+        #@show lux_chain_interpolator.interpolator.grid
+        output
     else
         # this uses 1-d or 2-d interpolators which expect a tuple of arguments
         inputs = [@view x[[i], :] for i in 1:size(x, 1)]
+        #@show typeof(inputs), size(inputs)
         output = lux_chain_interpolator.interpolator.(inputs...)
+        #@show typeof(output), size(output)
+        output
     end
     #@show output
     (output, st)
@@ -199,12 +209,16 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
 
     dvs_interpolation_luxchain_datablob = map(dep_vars) do dv
         println("interpolating $(nameof(dv))")
+        extraprints = nameof(dv) == :c_s_n
+        @show extraprints
         dv_pybamm_name = dependent_variables_to_pybamm_names[nameof(dv)]
         @show dv_pybamm_name
         dv_processed = sim.solution.__getitem__(dv_pybamm_name)
         dv_pybamm_interpolation_function = dv_processed._interpolation_function
+        @show dv_pybamm_interpolation_function
         deps = dependent_variables_to_dependencies[nameof(dv)]
         num_deps = length(deps)
+        if extraprints @show num_deps end
         py_axis_name = (:x, :y, :z)
         function iv_ranges_from_grid_length(grid_length)
             iv_ranges = map(1:num_deps) do i
@@ -226,11 +240,14 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
             unscaled_iv_ranges, scaled_iv_ranges = unzip(iv_ranges)
         end
         unscaled_iv_ranges, scaled_iv_ranges = iv_ranges_from_grid_length(large_interp_grid_length)
+        @show size(unscaled_iv_ranges)
 
         unscaled_ivs_mat = reduce(hcat, map(collect, vec(collect(product(unscaled_iv_ranges...)))))
+        @show size(unscaled_ivs_mat)
         dv_pybamm_interpolator = LuxChainInterpolator(dv_pybamm_interpolation_function)
         dv_mat = dv_pybamm_interpolator(unscaled_ivs_mat, NamedTuple(), NamedTuple())[1]
         @show size(dv_mat), typeof(dv_mat)
+        #@show dv_mat
         dv_mat = first.(dv_mat)
         #if num_deps <= 2
             #dv_mat = first.(dv_mat)
@@ -241,13 +258,16 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
         @show size(dv_grid)
         @show size.(scaled_iv_ranges)
         #dv_grid = permutedims(reshape(dv_pybamm_interpolation_function[py_axis_name[num_deps + 1]], reverse(length.(iv_ranges))...), reverse(1:num_deps))
-        dv_interpolation = LuxChainInterpolator(extrapolate(scale(interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), scaled_iv_ranges...), Line()))
-        @show typeof(dv_interpolation)
+        extrapolate_interpolate_function = extrapolate(scale(interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), scaled_iv_ranges...), Line())
+        dv_interpolation = LuxChainInterpolator(extrapolate_interpolate_function)
+        #@show typeof(dv_interpolation)
 
         dv_luxchain = Lux.Chain(dv_interpolation)
         unscaled_iv_ranges_small, scaled_iv_ranges_small = iv_ranges_from_grid_length(small_interp_grid_length)
         scaled_ivs_small_mat = reduce(hcat, map(collect, vec(collect(product(scaled_iv_ranges_small...)))))
-        dv_data_blob = reshape(dv_luxchain(scaled_ivs_small_mat, NamedTuple(), NamedTuple())[1], (length.(scaled_iv_ranges_small))...)
+        dv_data_mat = dv_luxchain(scaled_ivs_small_mat, NamedTuple(), NamedTuple())[1]
+        #@show dv_data_mat
+        dv_data_blob = reshape(dv_data_mat, (length.(scaled_iv_ranges_small))...)
 
         (dv_interpolation, dv_luxchain, dv_data_blob)
     end
@@ -263,6 +283,8 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
     @show dvs_interpolation
     @show dvs_luxchain
     @show size(dvs_data_blob)
+    @show size(dvs_data_blob[1])
+    #@show dvs_data_blob[1]
     @show typeof(dvs_data_blob)
 
     sim_data = Dict(
@@ -290,6 +312,15 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
         end
     end
     sim_data_nt = read_sim_data(sim_filename)
+    #@show sim_data_nt
+    #csn_data = sim_data_nt[:dvs][:c_s_n]
+    #@show csn_data
+    #@show size(csn_data)
+
+    #cen_data = sim_data_nt[:dvs][:c_e_n]
+    #@show cen_data
+    #@show size(cen_data)
+
 
 
     println("generating PINN discretization from the simulation interpolation to test against")
@@ -298,13 +329,52 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
 
     pinnrep = NeuralPDE.symbolic_discretize(pde_system, discretization)
     flat_init_params = pinnrep.flat_init_params
+    @show flat_init_params
+
+    eq_loss_certs = []
+    for (i, eq) in enumerate(eqs)
+        println("generating loss for equation $i")
+        @named single_eq_pde_system = PDESystem([eq], [ic_bc_fake], domains, ind_vars, dep_vars)
+        prob = NeuralPDE.discretize(single_eq_pde_system, discretization)
+        eq_loss = prob.f(flat_init_params, Float64[])
+        push!(eq_loss_certs, (i, eq, eq_loss))
+    end
+
+    ic_bc_loss_certs = []
+    for (i, ic_bc) in enumerate(ics_bcs)
+        println("generating loss for ic_bc $i")
+        @named single_ic_bc_pde_system = PDESystem([eq_fake], [ic_bc], domains, ind_vars, dep_vars)
+        prob = NeuralPDE.discretize(single_ic_bc_pde_system, discretization)
+        ic_bc_loss = prob.f(flat_init_params, Float64[])
+        push!(ic_bc_loss_certs, (i, ic_bc, ic_bc_loss))
+    end
+
     prob = NeuralPDE.discretize(pde_system, discretization)
+    total_loss = prob.f(flat_init_params, Float64[])
+    #@show total_loss
+
+    loss_cert_string = "total_loss: $total_loss\n\n" * "eq losses:\n\n" * 
+    join(map(eq_loss_certs) do (i, eq, loss)
+        string("eq $i:\n", eq, "\nloss: ", loss)
+    end, "\n\n") * "\n\nic bc losses:\n\n" * join(map(ic_bc_loss_certs) do (i, ic_bc, loss)
+        string("ic_bc $i:\n", ic_bc, "\nloss: ", loss)
+    end, "\n\n") * "\n"
+
+    # write loss_cert_string to file 
+    if typeof(output_dir) <: AbstractString
+        loss_cert_filename = joinpath(output_dir, "individual_loss_cert.txt")
+    else
+        loss_cert_filename = Base.tempname()
+    end
+    open(loss_cert_filename, "w") do f
+        print(f, loss_cert_string)
+    end
+
+
     #@show prob
     #@show typeof(prob)
     #@show prob.f
 
-    total_loss = prob.f(flat_init_params, Float64[])
-    @show total_loss
 
 
     (sim_data=sim_data_nt, pde_system=pde_system, sim=sim, variables=variables, 
@@ -341,6 +411,7 @@ function read_sim_data(output_dir_or_file::AbstractString)
     iv_syms = tuple(Symbol.(sim_data_strs["ivs"]["names"])...)
     iv_data = tuple(map(x->Float64.(x), (sim_data_strs["ivs"]["data"]))...)
     iv_nt = NamedTuple{iv_syms}(iv_data)
+    
     dv_syms = tuple(Symbol.(sim_data_strs["dvs"]["names"])...)
     dv_deps = tuple(map(x->NamedTuple{tuple(Symbol.(x)...)}(tuple((1:length(x))...)), sim_data_strs["dvs"]["deps"])...)
     dv_data = tuple(map(recursive_array_to_array, sim_data_strs["dvs"]["data"])...) 

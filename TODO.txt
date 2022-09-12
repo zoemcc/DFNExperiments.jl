@@ -229,7 +229,7 @@ domain_decomposition stuff:
 !add _n, _s, _p suffices to cache variable names that are in lines that contain a _n, _s, _p and make sure that all defined cache variable lhs' have the suffix if they need it
 !does it work correctly for the previous models or just dfn?
 !make FastChainInterpolator use a Lux object instead
-investigate why the loss is high for SPM
+!investigate why the loss is high for SPM (was just discretization parameters)
 
 
 

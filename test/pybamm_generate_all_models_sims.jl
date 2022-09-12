@@ -21,17 +21,24 @@ begin
     #models = [SPMModel(), SPMeModel()]
     #SPMnoRModel(), 
     all_models = [SPMModel(), ReducedCModel(), SPMeModel(), ReducedCPhiModel(), ReducedCPhiJModel(), DFNnoRModel(), DFNModel()]
+    #num_pts = 4000
+    #num_pts = 1000
     num_pts = 100
-    large_interp_grid_lengths = 400
-    small_interp_grid_length = 100
+    #large_interp_grid_lengths = 1000
+    #large_interp_grid_lengths = 400
+    large_interp_grid_lengths = 40
+    #small_interp_grid_length = 100
+    #small_interp_grid_length = 100
+    small_interp_grid_length = 30
+    #num_stochastic_samples_from_loss = 1024
     num_stochastic_samples_from_loss = 1024
     current_input = false
     include_q = false
     #model = all_models[1]
-    j = 1
-    i = j
-    #for i in 1:7
-    begin
+    #j = 4
+    #i = j
+    for i in 7:7
+    #begin
         model = all_models[i]
         #include_q = DFNExperiments.include_q_model(model)
         models_dir = abspath(joinpath(@__DIR__, "..", "models"))
@@ -39,7 +46,7 @@ begin
         output_dir = joinpath(models_dir, "$(model_str)")
         model_file = joinpath(output_dir, "model.jl")
         loss_file = joinpath(output_dir, "loss_certificate.txt")
-        writemodel=true
+        writemodel=false
         writesimdata=true
         writeloss=true
 
@@ -60,13 +67,12 @@ begin
                     writemodel=writemodel,
                     )
         """
-        nothing
-        if false && !isnothing(prob)
-            example_loss = prob.f(ev,ev)
-            @show example_loss
+        #nothing
+        if writeloss && !isnothing(total_loss)
+            @show total_loss
             if writeloss
                 open(loss_file, "w") do f
-                    print(f, string(example_loss) * "\n")
+                    print(f, string(total_loss) * "\n")
                 end
             end
         end

@@ -39,27 +39,27 @@ Dx_s = Differential(x_s)
 Dx_p = Differential(x_p)
 
 # 'Electrolyte concentration' equation
-cache_5220914418673774043_n = 2.25
-cache_5220914418673774043_s = 0.0
-cache_5220914418673774043_p = -2.25
-cache_141414454231725967_n = (Dx_n(Dx_n(c_e_n(t, x_n)))) + cache_5220914418673774043_n
-cache_141414454231725967_s = (Dx_s(Dx_s(c_e_s(t, x_s)))) + cache_5220914418673774043_s
-cache_141414454231725967_p = (Dx_p(Dx_p(c_e_p(t, x_p)))) + cache_5220914418673774043_p
+cache_2342231486479082649_n = 2.25
+cache_2342231486479082649_s = 0.0
+cache_2342231486479082649_p = -2.25
+cache_6108101611517005270_n = (Dx_n(Dx_n(c_e_n(t, x_n)))) + cache_2342231486479082649_n
+cache_6108101611517005270_s = (Dx_s(Dx_s(c_e_s(t, x_s)))) + cache_2342231486479082649_s
+cache_6108101611517005270_p = (Dx_p(Dx_p(c_e_p(t, x_p)))) + cache_2342231486479082649_p
 
 # 'Electrolyte potential' equation
-cache_5220914418673774043_n = 2.25
-cache_5220914418673774043_s = 0.0
-cache_5220914418673774043_p = -2.25
-cache_5221024469835818702_n = (Dx_n(Dx_n(c_e_n(t, x_n)) / c_e_n(t, x_n) - Dx_n(phi_e_n(t, x_n)))) - cache_5220914418673774043_n
-cache_5221024469835818702_s = (Dx_s(Dx_s(c_e_s(t, x_s)) / c_e_s(t, x_s) - Dx_s(phi_e_s(t, x_s)))) - cache_5220914418673774043_s
-cache_5221024469835818702_p = (Dx_p(Dx_p(c_e_p(t, x_p)) / c_e_p(t, x_p) - Dx_p(phi_e_p(t, x_p)))) - cache_5220914418673774043_p
+cache_2342231486479082649_n = 2.25
+cache_2342231486479082649_s = 0.0
+cache_2342231486479082649_p = -2.25
+cache_8603744982470494737_n = (Dx_n(Dx_n(c_e_n(t, x_n)) / c_e_n(t, x_n) - Dx_n(phi_e_n(t, x_n)))) - cache_2342231486479082649_n
+cache_8603744982470494737_s = (Dx_s(Dx_s(c_e_s(t, x_s)) / c_e_s(t, x_s) - Dx_s(phi_e_s(t, x_s)))) - cache_2342231486479082649_s
+cache_8603744982470494737_p = (Dx_p(Dx_p(c_e_p(t, x_p)) / c_e_p(t, x_p) - Dx_p(phi_e_p(t, x_p)))) - cache_2342231486479082649_p
 eqs = [
-   Dt(c_e_n(t, x_n)) ~ cache_141414454231725967_n,
-   Dt(c_e_s(t, x_s)) ~ cache_141414454231725967_s,
-   Dt(c_e_p(t, x_p)) ~ cache_141414454231725967_p,
-   0 ~ cache_5221024469835818702_n,
-   0 ~ cache_5221024469835818702_s,
-   0 ~ cache_5221024469835818702_p,
+   Dt(c_e_n(t, x_n)) ~ cache_6108101611517005270_n,
+   Dt(c_e_s(t, x_s)) ~ cache_6108101611517005270_s,
+   Dt(c_e_p(t, x_p)) ~ cache_6108101611517005270_p,
+   0 ~ cache_8603744982470494737_n,
+   0 ~ cache_8603744982470494737_s,
+   0 ~ cache_8603744982470494737_p,
 ]
 
 

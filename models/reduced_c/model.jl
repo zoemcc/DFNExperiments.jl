@@ -30,16 +30,16 @@ Dx_s = Differential(x_s)
 Dx_p = Differential(x_p)
 
 # 'Electrolyte concentration' equation
-cache_5220914418673774043_n = 2.25
-cache_5220914418673774043_s = 0.0
-cache_5220914418673774043_p = -2.25
-cache_141414454231725967_n = (Dx_n(Dx_n(c_e_n(t, x_n)))) + cache_5220914418673774043_n
-cache_141414454231725967_s = (Dx_s(Dx_s(c_e_s(t, x_s)))) + cache_5220914418673774043_s
-cache_141414454231725967_p = (Dx_p(Dx_p(c_e_p(t, x_p)))) + cache_5220914418673774043_p
+cache_m5729566733887177216_n = 2.25
+cache_m5729566733887177216_s = 0.0
+cache_m5729566733887177216_p = -2.25
+cache_8327581641087914053_n = (Dx_n(Dx_n(c_e_n(t, x_n)))) + cache_m5729566733887177216_n
+cache_8327581641087914053_s = (Dx_s(Dx_s(c_e_s(t, x_s)))) + cache_m5729566733887177216_s
+cache_8327581641087914053_p = (Dx_p(Dx_p(c_e_p(t, x_p)))) + cache_m5729566733887177216_p
 eqs = [
-   Dt(c_e_n(t, x_n)) ~ cache_141414454231725967_n,
-   Dt(c_e_s(t, x_s)) ~ cache_141414454231725967_s,
-   Dt(c_e_p(t, x_p)) ~ cache_141414454231725967_p,
+   Dt(c_e_n(t, x_n)) ~ cache_8327581641087914053_n,
+   Dt(c_e_s(t, x_s)) ~ cache_8327581641087914053_s,
+   Dt(c_e_p(t, x_p)) ~ cache_8327581641087914053_p,
 ]
 
 

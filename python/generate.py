@@ -209,9 +209,18 @@ def reduced_c_phi():
                 "left": (pybamm.Scalar(0), "Dirichlet"),
                 "right": (pybamm.Scalar(0), "Neumann"),
             }
-            self.variables.update(
-                {"Electrolyte concentration": c_e, "Electrolyte potential": phi_e}
-            )
+            #self.variables.update(
+                #{"Electrolyte concentration": c_e, "Electrolyte potential": phi_e}
+            #)
+            self.variables.update({
+                "Electrolyte concentration neg": c_e_n,
+                "Electrolyte concentration sep": c_e_s,
+                "Electrolyte concentration pos": c_e_p,
+                "Negative electrolyte potential": phi_e_n,
+                "Separator electrolyte potential": phi_e_s,
+                "Positive electrolyte potential": phi_e_p,
+                                   })
+            ic(self.variables)
 
     model = Model()
     variables = list(model.variables.keys())
@@ -295,13 +304,20 @@ def reduced_c_phi_j():
 
             self.variables.update(
                 {
-                    "Electrolyte concentration": c_e,
-                    "Electrolyte potential": phi_e,
+                    #"Electrolyte concentration": c_e,
+                    #"Electrolyte potential": phi_e,
+                    "Electrolyte concentration neg": c_e_n,
+                    "Electrolyte concentration sep": c_e_s,
+                    "Electrolyte concentration pos": c_e_p,
+                    "Negative electrolyte potential": phi_e_n,
+                    "Separator electrolyte potential": phi_e_s,
+                    "Positive electrolyte potential": phi_e_p,
                     "Negative electrode potential": phi_s_n,
                     "Positive electrode potential": phi_s_p,
                     "Interfacial current density": j,
                 }
             )
+            ic(self.variables)
 
     model = Model()
     variables = list(model.variables.keys())
@@ -312,38 +328,38 @@ def solve_plot_generate(model, variables, current_input=False, include_q=False, 
     #ic(model.rhs.keys())
     #ic(model.rhs.items())
     #ic(model.algebraic)
-    ic(include_q)
+    #ic(include_q)
+    rhs_to_pop = []
+    ic_to_pop = []
     if include_q:
         common_vars = ["Time", "x", "x_n", "x_p", "r_n", "r_p", "Discharge capacity [A.h]"]
         
     else:
         common_vars = ["Time", "x", "x_n", "x_p", "r_n", "r_p"]
-        rhs_to_pop = []
         for i, var in enumerate(model.rhs.keys()):
             if var.name == "Discharge capacity [A.h]":
                 rhs_to_pop.append((var, model.rhs[var]))
         for popee, val in rhs_to_pop:
-            ic(popee)
-            ic(val)
+            #ic(popee)
+            #ic(val)
             model.rhs.pop(popee)
-        ic("ic's")
-        ic_to_pop = []
+        #ic("ic's")
         for i, var in enumerate(model.initial_conditions):
             if var.name == "Discharge capacity [A.h]":
                 ic_to_pop.append((var, model.initial_conditions[var]))
         for popee, val in ic_to_pop:
-            ic(popee)
-            ic(val)
+            #ic(popee)
+            #ic(val)
             model.initial_conditions.pop(popee)
         #ic("bc's")
         #for i, var in enumerate(model.boundary_conditions):
             #ic(var.name)
             #ic(model.boundary_conditions[var])
-    ic(common_vars)
+    #ic(common_vars)
     variables = list(set(common_vars + variables))
-    ic(variables)
+    #ic(variables)
     dep_vars = [x for x in variables if x not in common_vars]
-    ic(dep_vars)
+    #ic(dep_vars)
 
     parameter_values = model.default_parameter_values
     # parameter_values["Electrolyte diffusivity [m2.s-1]"] = 1e-10
