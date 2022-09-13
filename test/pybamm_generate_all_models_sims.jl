@@ -13,6 +13,7 @@ begin
     import ModelingToolkit: Interval, infimum, supremum
     using IterTools
     using Term
+    using Plots
     #using Infiltrator
 end
 
@@ -35,22 +36,29 @@ begin
     current_input = false
     include_q = false
     #model = all_models[1]
-    #j = 4
-    #i = j
+    j = 1
+    i = j
     # 5
-    for i in 7:7
+    bad_models = [7]
+    for i in bad_models
+    #for i in 7:7
     #begin
         model = all_models[i]
         #include_q = DFNExperiments.include_q_model(model)
         models_dir = abspath(joinpath(@__DIR__, "..", "models"))
         model_str = pybamm_func_str(model)
         num_pts = num_pts_validation(model)
+        num_tsteps = num_tsteps_validation(model)
         large_interp_grid_length = large_interp_grid_length_validation(model)
+        large_grid_tsteps_length = large_grid_tsteps_validation(model) 
         small_interp_grid_length = small_interp_grid_length_validation(model)
+        small_grid_tsteps_length = small_grid_tsteps_validation(model) 
         num_stochastic_samples_from_loss = num_stochastic_samples_from_loss_validation(model)
         @show num_pts
         @show large_interp_grid_length
+        @show large_grid_tsteps_length
         @show small_interp_grid_length
+        @show small_grid_tsteps_length
         @show num_stochastic_samples_from_loss
         output_dir = joinpath(models_dir, "$(model_str)")
         model_file = joinpath(output_dir, "model.jl")
@@ -65,7 +73,8 @@ begin
             dependent_variables_to_pybamm_names, dependent_variables_to_dependencies, dvs_interpolation,
             dvs_fastchain, prob, total_loss, pinnrep, discretization = 
                 generate_sim_model_and_test(model; current_input=current_input, include_q=include_q, output_dir=output_dir, num_pts=num_pts,
-                    large_interp_grid_length=large_interp_grid_length, small_interp_grid_length=small_interp_grid_length,
+                    num_tsteps=num_tsteps, large_interp_grid_length=large_interp_grid_length, small_interp_grid_length=small_interp_grid_length,
+                    large_grid_tsteps_length=large_grid_tsteps_length, small_grid_tsteps_length=small_grid_tsteps_length,
                     num_stochastic_samples_from_loss=num_stochastic_samples_from_loss,
                     writemodel=writemodel, writesimdata=writesimdata
                     )
@@ -95,6 +104,97 @@ end
 #loss_file = joinpath(output_dir, "loss_certificate.txt")
         #solvars = [sim.solution.__getitem__(var) for var in variables]
 
+"""
+c_e_n_lf = pinnrep.loss_functions.datafree_pde_loss_functions[3]
+c_e_p_lf = pinnrep.loss_functions.datafree_pde_loss_functions[5]
+flat_init_params = pinnrep.flat_init_params
+Nt = 400
+Nx = 200
+ts = range(0., 0.159, Nt)
+x_ns = range(0.0, 0.4444444444444445, Nx)
+ts_x_ns = cartesian_product(ts, x_ns; flat=Val{true})
+c_e_n_s_raw = reshape(c_e_n_lf(ts_x_ns, flat_init_params), (Nt, Nx))
+c_e_n_s_abs = abs.(c_e_n_s_raw)
+c_e_n_s_log_abs = log.(c_e_n_s_abs)
+heatmap(ts, x_ns, c_e_n_s_abs', title="abs loss for the c_e_n differential equation")
+heatmap(ts, x_ns, c_e_n_s_log_abs', title="log abs loss for the c_e_n differential equation")
+
+x_ps = range(0.5555555555555556, 1.0, Nx)
+ts_x_ps = cartesian_product(ts, x_ps; flat=Val{true})
+c_e_p_s_raw = reshape(c_e_p_lf(ts_x_ps, flat_init_params), (Nt, Nx))
+c_e_p_s_abs = abs.(c_e_p_s_raw)
+c_e_p_s_log_abs = log.(c_e_p_s_abs)
+heatmap(ts, x_ps, c_e_p_s_abs', title="abs loss for the c_e_p differential equation")
+heatmap(ts, x_ps, c_e_p_s_log_abs', title="log abs loss for the c_e_p differential equation")
+"""
+
+
+
+
+
+"""
+c_s_n_lf = pinnrep.loss_functions.datafree_pde_loss_functions[1]
+c_n_p_lf = pinnrep.loss_functions.datafree_pde_loss_functions[2]
+c_s_n_ic_lf = pinnrep.loss_functions.datafree_bc_loss_functions[1]
+flat_init_params = pinnrep.flat_init_params
+@unpack domains, eqs, bcs, dict_indvars, dict_depvars, flat_init_params = pinnrep
+strategy = discretization.strategy
+eltypeθ = eltype(pinnrep.flat_init_params)
+bounds = get_bounds(domains, eqs, bcs, eltypeθ, dict_indvars, dict_depvars,
+                    strategy)
+function distance_to_boundary_function(bound, ratio_to_full_weight)
+    this_distance = function distance_to_boundary(x)
+        distances = map(enumerate(bound)) do (i, variable) 
+            if variable isa Array
+                bound_length = variable[2] - variable[1]
+                scale = 1 / (ratio_to_full_weight * bound_length)
+                x_i = @view x[[i], :]
+                min.(max.(min.(x_i .- variable[1], variable[2] .- x_i), 0) .* scale, 1)
+            else
+                1
+            end
+        end
+        min.(distances...)
+    end
+    this_distance
+end
+
+dfs = distance_to_boundary_function(bounds[1][1], 1/10)
+variable = bounds[1][1][1]
+ratio_to_full_weight = 1/10
+bound_length = variable[2] - variable[1]
+scale = 1 / (bound_length * ratio_to_full_weight)
+x = ts
+d1 = x .- variable[1]
+d2 = variable[2] .- x
+m1 = min.(d1, d2)
+m2 = max.(m1, 0) .* scale
+m3 = min.(m2, 1)
+distances = distance_to_boundary(ts_r_ns, bounds[1][1], 1/10)
+#df(x) = max.(min.(x .- variable[1], variable[2] .- x), 0.0)
+ts = @view ts_r_ns[[1], :]
+dfs[1](ts)
+distance_to_boundary_function(bounds[1][1])
+Nt = 400
+Nr = 200
+ts = range(0., 0.159, Nt)
+r_ns = range(0.0, 1.0, Nr)
+ts_r_ns = cartesian_product(ts, r_ns; flat=Val{true})
+c_s_n_s_raw = reshape(c_s_n_lf(ts_r_ns, flat_init_params), (Nt, Nr))
+c_s_n_s_abs = abs.(c_s_n_s_raw)
+c_s_n_s_log_abs = log.(c_s_n_s_abs)
+heatmap(ts, r_ns, c_s_n_s_abs', title="abs loss for the c_s_n differential equation")
+heatmap(ts, r_ns, c_s_n_s_log_abs', title="log abs loss for the c_s_n differential equation")
+
+x_ps = range(0.5555555555555556, 1.0, Nx)
+ts_x_ps = cartesian_product(ts, x_ps; flat=Val{true})
+c_e_p_s_raw = reshape(c_e_p_lf(ts_x_ps, flat_init_params), (Nt, Nx))
+c_e_p_s_abs = abs.(c_e_p_s_raw)
+c_e_p_s_log_abs = log.(c_e_p_s_abs)
+heatmap(ts, x_ps, c_e_p_s_abs', title="abs loss for the c_e_p differential equation")
+heatmap(ts, x_ps, c_e_p_s_log_abs', title="log abs loss for the c_e_p differential equation")
+#plot(x_ns, ts, c_e_n_s_abs, linetype=:contourf, title="abs loss for the c_e_n differential equation")
+"""
 nothing
 """
 #@named modded_pde_system = PDESystem(pde_system.eqs, pde_system.bcs, pde_system.domain[[1,3,2]], pde_system.ivs[[1,3,2]], pde_system.dvs)

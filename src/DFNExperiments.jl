@@ -27,6 +27,7 @@ Base.nameof(term::Term{Real, Base.ImmutableDict{DataType, Any}}) = (nameof ∘ o
 pybamm_func_str(::AbstractPyBaMMModel) = throw("Not implemented")
 include_q_model(::AbstractPyBaMMModel) = throw("Not implemented")
 num_pts_validation(::AbstractPyBaMMModel) = throw("Not implemented")
+num_tsteps_validation(::AbstractPyBaMMModel) = throw("Not implemented")
 large_interp_grid_length_validation(::AbstractPyBaMMModel) = throw("Not implemented")
 small_interp_grid_length_validation(::AbstractPyBaMMModel) = throw("Not implemented")
 num_stochastic_samples_from_loss_validation(::AbstractPyBaMMModel) = throw("Not implemented")
@@ -43,20 +44,26 @@ end
 
 pybamm_func_str(::SPMnoRModel) = "spm_no_r"
 include_q_model(::SPMnoRModel) = false
-num_pts_validation(::SPMnoRModel) = 4000
-large_interp_grid_length_validation(::SPMnoRModel) = 1000
-small_interp_grid_length_validation(::SPMnoRModel) = 400
-num_stochastic_samples_from_loss_validation(::SPMnoRModel) = 4096
+num_pts_validation(::SPMnoRModel) = 400
+num_tsteps_validation(::SPMnoRModel) = 4000
+large_interp_grid_length_validation(::SPMnoRModel) = 200
+large_grid_tsteps_validation(::SPMnoRModel) = 2000
+small_interp_grid_length_validation(::SPMnoRModel) = 100
+small_grid_tsteps_validation(::SPMnoRModel) = 400
+num_stochastic_samples_from_loss_validation(::SPMnoRModel) = 1024 * 16
 
 struct SPMModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::SPMModel) = "spm"
 include_q_model(::SPMModel) = false
-num_pts_validation(::SPMModel) = 4000
-large_interp_grid_length_validation(::SPMModel) = 1000
-small_interp_grid_length_validation(::SPMModel) = 400
-num_stochastic_samples_from_loss_validation(::SPMModel) = 4096
+num_pts_validation(::SPMModel) = 400
+num_tsteps_validation(::SPMModel) = 8000
+large_interp_grid_length_validation(::SPMModel) = 100
+large_grid_tsteps_validation(::SPMModel) = 2000
+small_interp_grid_length_validation(::SPMModel) = 100
+small_grid_tsteps_validation(::SPMModel) = 400
+num_stochastic_samples_from_loss_validation(::SPMModel) = 1024 * 16
 
 
 struct ReducedCModel <: AbstractPyBaMMModel
@@ -64,10 +71,13 @@ end
 
 pybamm_func_str(::ReducedCModel) = "reduced_c"
 include_q_model(::ReducedCModel) = false
-num_pts_validation(::ReducedCModel) = 4000
-large_interp_grid_length_validation(::ReducedCModel) = 1000
-small_interp_grid_length_validation(::ReducedCModel) = 400
-num_stochastic_samples_from_loss_validation(::ReducedCModel) = 4096
+num_pts_validation(::ReducedCModel) = 400
+num_tsteps_validation(::ReducedCModel) = 8000
+large_interp_grid_length_validation(::ReducedCModel) = 200
+large_grid_tsteps_validation(::ReducedCModel) = 2000
+small_interp_grid_length_validation(::ReducedCModel) = 100
+small_grid_tsteps_validation(::ReducedCModel) = 400
+num_stochastic_samples_from_loss_validation(::ReducedCModel) = 1024 * 16
 
 
 struct SPMeModel <: AbstractPyBaMMModel
@@ -75,50 +85,65 @@ end
 
 pybamm_func_str(::SPMeModel) = "spme"
 include_q_model(::SPMeModel) = false
-num_pts_validation(::SPMeModel) = 4000
-large_interp_grid_length_validation(::SPMeModel) = 1000
-small_interp_grid_length_validation(::SPMeModel) = 400
-num_stochastic_samples_from_loss_validation(::SPMeModel) = 4096
+num_pts_validation(::SPMeModel) = 400
+num_tsteps_validation(::SPMeModel) = 8000
+large_interp_grid_length_validation(::SPMeModel) = 200
+large_grid_tsteps_validation(::SPMeModel) = 2000
+small_interp_grid_length_validation(::SPMeModel) = 100
+small_grid_tsteps_validation(::SPMeModel) = 400
+num_stochastic_samples_from_loss_validation(::SPMeModel) = 1024 * 16
 
 struct ReducedCPhiModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::ReducedCPhiModel) = "reduced_c_phi"
 include_q_model(::ReducedCPhiModel) = false
-num_pts_validation(::ReducedCPhiModel) = 4000
-large_interp_grid_length_validation(::ReducedCPhiModel) = 1000
-small_interp_grid_length_validation(::ReducedCPhiModel) = 400
-num_stochastic_samples_from_loss_validation(::ReducedCPhiModel) = 4096
+num_pts_validation(::ReducedCPhiModel) = 400
+num_tsteps_validation(::ReducedCPhiModel) = 8000
+large_interp_grid_length_validation(::ReducedCPhiModel) = 200
+large_grid_tsteps_validation(::ReducedCPhiModel) = 2000
+small_interp_grid_length_validation(::ReducedCPhiModel) = 100
+small_grid_tsteps_validation(::ReducedCPhiModel) = 400
+num_stochastic_samples_from_loss_validation(::ReducedCPhiModel) = 1024 * 16
 
 struct ReducedCPhiJModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::ReducedCPhiJModel) = "reduced_c_phi_j"
 include_q_model(::ReducedCPhiJModel) = false
-num_pts_validation(::ReducedCPhiJModel) = 4000
-large_interp_grid_length_validation(::ReducedCPhiJModel) = 1000
-small_interp_grid_length_validation(::ReducedCPhiJModel) = 400
-num_stochastic_samples_from_loss_validation(::ReducedCPhiJModel) = 4096
+num_pts_validation(::ReducedCPhiJModel) = 400
+num_tsteps_validation(::ReducedCPhiJModel) = 8000
+large_interp_grid_length_validation(::ReducedCPhiJModel) = 200
+large_grid_tsteps_validation(::ReducedCPhiJModel) = 2000
+small_interp_grid_length_validation(::ReducedCPhiJModel) = 100
+small_grid_tsteps_validation(::ReducedCPhiJModel) = 400
+num_stochastic_samples_from_loss_validation(::ReducedCPhiJModel) = 1024 * 16
 
 struct DFNnoRModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::DFNnoRModel) = "dfn_no_r"
 include_q_model(::DFNnoRModel) = false
-num_pts_validation(::DFNnoRModel) = 1000
-large_interp_grid_length_validation(::DFNnoRModel) = 600
-small_interp_grid_length_validation(::DFNnoRModel) = 400
-num_stochastic_samples_from_loss_validation(::DFNnoRModel) = 4096
+num_pts_validation(::DFNnoRModel) = 400
+num_tsteps_validation(::DFNnoRModel) = 8000
+large_interp_grid_length_validation(::DFNnoRModel) = 200
+large_grid_tsteps_validation(::DFNnoRModel) = 2000
+small_interp_grid_length_validation(::DFNnoRModel) = 100
+small_grid_tsteps_validation(::DFNnoRModel) = 400
+num_stochastic_samples_from_loss_validation(::DFNnoRModel) = 1024 * 16
 
 struct DFNModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::DFNModel) = "dfn"
 include_q_model(::DFNModel) = false
-num_pts_validation(::DFNModel) = 100
-large_interp_grid_length_validation(::DFNModel) = 60
-small_interp_grid_length_validation(::DFNModel) = 30
-num_stochastic_samples_from_loss_validation(::DFNModel) = 4096
+num_pts_validation(::DFNModel) = 300
+num_tsteps_validation(::DFNModel) = 8000
+large_interp_grid_length_validation(::DFNModel) = 100
+large_grid_tsteps_validation(::DFNModel) = 2000
+small_interp_grid_length_validation(::DFNModel) = 60
+small_grid_tsteps_validation(::DFNModel) = 400
+num_stochastic_samples_from_loss_validation(::DFNModel) = 1024 * 16
 
 
 include("generate_py.jl")
@@ -208,12 +233,13 @@ function (fastchaininterpolator::FastChainInterpolator)(v, θ)
 end
 DiffEqFlux.initial_params(::FastChainInterpolator) = Float64[]
 
-function generate_sim_model_and_test(model::M; current_input=false, include_q=false, output_dir=nothing, num_pts=100, 
-        large_interp_grid_length=1000, small_interp_grid_length=100, num_stochastic_samples_from_loss=1024, writemodel=true, writesimdata=true) where {M <: AbstractPyBaMMModel}
+function generate_sim_model_and_test(model::M; current_input=false, include_q=false, output_dir=nothing, num_pts=400, num_tsteps=4000, 
+        large_interp_grid_length=200, large_grid_tsteps_length=2000, small_interp_grid_length=100, small_grid_tsteps_length=400,
+        num_stochastic_samples_from_loss=1024, writemodel=true, writesimdata=true) where {M <: AbstractPyBaMMModel}
     model_str = pybamm_func_str(model)
     current_input_str = current_input ? "True" : "False" 
     include_q_str = include_q ? "True" : "False"
-    sim, mtk_str, variables = py"solve_plot_generate(*$$(model_str)(), current_input=$$(current_input_str), include_q=$$(include_q_str), num_pts=$$(num_pts))"
+    sim, mtk_str, variables = py"solve_plot_generate(*$$(model_str)(), current_input=$$(current_input_str), include_q=$$(include_q_str), num_pts=$$(num_pts), num_tsteps=$$(num_tsteps))"
 
     if typeof(output_dir) <: AbstractString
         if !isdir(output_dir)
@@ -256,7 +282,7 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
         num_deps = length(deps)
         if extraprints @show num_deps end
         py_axis_name = (:x, :y, :z)
-        function iv_ranges_from_grid_length(grid_length)
+        function iv_ranges_from_grid_length(tsteps_length, grid_length)
             iv_ranges = map(1:num_deps) do i
                 iv = deps[i]
                 iv_pybamm_name = independent_variables_to_pybamm_names[iv]
@@ -269,13 +295,14 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
                 end
                 # assume time is first
                 iv_scale = i == 1 ? dv_processed.timescale : dv_processed.length_scales[iv_pybamm_name]
-                unscaled_iv_range = range(Interval(iv_grid[1], iv_grid[end]), grid_length)
-                scaled_iv_range = range(Interval(iv_grid[1] / iv_scale, iv_grid[end] / iv_scale), grid_length)
+                this_grid_length = i == 1 ? tsteps_length : grid_length
+                unscaled_iv_range = range(Interval(iv_grid[1], iv_grid[end]), this_grid_length)
+                scaled_iv_range = range(Interval(iv_grid[1] / iv_scale, iv_grid[end] / iv_scale), this_grid_length)
                 (unscaled_iv_range, scaled_iv_range)
             end
             unscaled_iv_ranges, scaled_iv_ranges = unzip(iv_ranges)
         end
-        unscaled_iv_ranges, scaled_iv_ranges = iv_ranges_from_grid_length(large_interp_grid_length)
+        unscaled_iv_ranges, scaled_iv_ranges = iv_ranges_from_grid_length(large_grid_tsteps_length, large_interp_grid_length)
         @show size(unscaled_iv_ranges)
 
         unscaled_ivs_mat = reduce(hcat, map(collect, vec(collect(product(unscaled_iv_ranges...)))))
@@ -290,7 +317,9 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
         #else
             #dv_mat = first(dv_mat)
         #end
-        dv_grid = reshape(dv_mat, fill(large_interp_grid_length, num_deps)...)
+        @show large_grid_tsteps_validation, large_interp_grid_length
+        @show length.(scaled_iv_ranges)
+        dv_grid = reshape(dv_mat, (length.(scaled_iv_ranges))...)
         @show size(dv_grid)
         @show size.(scaled_iv_ranges)
         #dv_grid = permutedims(reshape(dv_pybamm_interpolation_function[py_axis_name[num_deps + 1]], reverse(length.(iv_ranges))...), reverse(1:num_deps))
@@ -299,7 +328,7 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
         #@show typeof(dv_interpolation)
 
         dv_luxchain = Lux.Chain(dv_interpolation)
-        unscaled_iv_ranges_small, scaled_iv_ranges_small = iv_ranges_from_grid_length(small_interp_grid_length)
+        unscaled_iv_ranges_small, scaled_iv_ranges_small = iv_ranges_from_grid_length(small_grid_tsteps_length, small_interp_grid_length)
         scaled_ivs_small_mat = reduce(hcat, map(collect, vec(collect(product(scaled_iv_ranges_small...)))))
         dv_data_mat = dv_luxchain(scaled_ivs_small_mat, NamedTuple(), NamedTuple())[1]
         #@show dv_data_mat
@@ -477,7 +506,10 @@ export AbstractApplyFuncType, ParameterizedMatrixApplyFuncType, VectorOfParamete
 export MultiDimensionalFunction, cartesian_product
 export get_eval_network_at_sim_data_func, get_cb_func, get_plot_function, do_plot
 export SPMnoRModel, SPMModel, ReducedCModel, SPMeModel, ReducedCPhiModel, ReducedCPhiJModel, DFNnoRModel, DFNModel
-export num_pts_validation, large_interp_grid_length_validation, small_interp_grid_length_validation, num_stochastic_samples_from_loss_validation
+export num_pts_validation, num_tsteps_validation
+export large_interp_grid_length_validation, small_interp_grid_length_validation
+export large_grid_tsteps_validation, small_grid_tsteps_validation
+export num_stochastic_samples_from_loss_validation
 
 
 end

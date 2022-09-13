@@ -1,73 +1,73 @@
-total_loss: 0.0030402714680652673
+total_loss: 0.0008875213679631171
 
 eq losses:
 
 eq 1:
 Differential(t)(c_e_n(t, x_n)) ~ 2.25 + Differential(x_n)(Differential(x_n)(c_e_n(t, x_n)))
-loss: 0.000661234229439597
+loss: 0.0001832833368386447
 
 eq 2:
 Differential(t)(c_e_s(t, x_s)) ~ Differential(x_s)(Differential(x_s)(c_e_s(t, x_s)))
-loss: 0.0006913583502760228
+loss: 5.409940828753896e-7
 
 eq 3:
 Differential(t)(c_e_p(t, x_p)) ~ Differential(x_p)(Differential(x_p)(c_e_p(t, x_p))) - 2.25
-loss: 0.0006590898808838898
+loss: 0.0002152471812906943
 
 eq 4:
 0 ~ Differential(x_n)(Differential(x_n)(c_e_n(t, x_n)) / c_e_n(t, x_n) - Differential(x_n)(phi_e_n(t, x_n))) - 2.25
-loss: 0.00023595717443074214
+loss: 0.00026272183002775626
 
 eq 5:
 0 ~ Differential(x_s)(Differential(x_s)(c_e_s(t, x_s)) / c_e_s(t, x_s) - Differential(x_s)(phi_e_s(t, x_s)))
-loss: 8.842476175174989e-7
+loss: 2.4894149043362907e-5
 
 eq 6:
 0 ~ 2.25 + Differential(x_p)(Differential(x_p)(c_e_p(t, x_p)) / c_e_p(t, x_p) - Differential(x_p)(phi_e_p(t, x_p)))
-loss: 0.00012768775769294812
+loss: 0.0001417355574741437
 
 ic bc losses:
 
 ic_bc 1:
 c_e_n(0, x_n) ~ 1.0
-loss: 1.7733601816053095e-32
+loss: 1.712444142824988e-32
 
 ic_bc 2:
 c_e_s(0, x_s) ~ 1.0
-loss: 1.7580129273609737e-32
+loss: 1.8049346394942113e-32
 
 ic_bc 3:
 c_e_p(0, x_p) ~ 1.0
-loss: 1.9421799782930032e-32
+loss: 1.8243257935556245e-32
 
 ic_bc 4:
 Differential(x_n)(c_e_n(t, 0.0)) ~ 0.0
-loss: 5.296159650924865e-8
+loss: 2.945462992455426e-6
 
 ic_bc 5:
 c_e_n(t, 0.4444444444444445) ~ c_e_s(t, 0.4444444444444445)
-loss: 1.894305888224009e-16
+loss: 2.8487872491953347e-12
 
 ic_bc 6:
 c_e_p(t, 0.5555555555555556) ~ c_e_s(t, 0.5555555555555556)
-loss: 1.9003627365051513e-16
+loss: 2.843919130456067e-12
 
 ic_bc 7:
 Differential(x_p)(c_e_p(t, 1.0)) ~ 0.0
-loss: 5.324793816567958e-8
+loss: 2.966216819235442e-6
 
 ic_bc 8:
 phi_e_n(t, 0.0) ~ 0.0
-loss: 5.734047165563384e-16
+loss: 8.665600567344689e-12
 
 ic_bc 9:
 phi_e_n(t, 0.4444444444444445) ~ phi_e_s(t, 0.4444444444444445)
-loss: 8.703653820586032e-16
+loss: 1.3373387571996659e-11
 
 ic_bc 10:
 phi_e_p(t, 0.5555555555555556) ~ phi_e_s(t, 0.5555555555555556)
-loss: 6.621065021802171e-16
+loss: 9.409721778617088e-12
 
 ic_bc 11:
 Differential(x_p)(phi_e_p(t, 1.0)) ~ 0.0
-loss: 3.137832656135929e-7
+loss: 1.760044398783318e-5

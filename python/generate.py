@@ -1,5 +1,6 @@
 import pybamm
 import rich
+import numpy as np
 from icecream import ic
 from rich import inspect
 from IPython import embed
@@ -58,7 +59,7 @@ def spme():
         "X-averaged negative particle concentration",
         "X-averaged positive particle concentration",
         "Electrolyte concentration",
-        "Porosity times concentration"
+        #"Porosity times concentration"
     ]
     return model, variables
 
@@ -324,7 +325,7 @@ def reduced_c_phi_j():
     return model, variables
 
 
-def solve_plot_generate(model, variables, current_input=False, include_q=False, num_pts=100):
+def solve_plot_generate(model, variables, current_input=False, include_q=False, num_pts=100, num_tsteps=1000):
     #ic(model.rhs.keys())
     #ic(model.rhs.items())
     #ic(model.algebraic)
@@ -407,7 +408,8 @@ def solve_plot_generate(model, variables, current_input=False, include_q=False, 
     #sim.solve([0, 3600], inputs=inputs)
     #sim.mesh.add_ghost_meshes()
     pybamm.set_logging_level("INFO")
-    sim.solve([0, 3600], inputs=inputs)
+    time_steps = np.linspace(0, 3600, num=num_tsteps)
+    sim.solve(time_steps, inputs=inputs)
 
 
     # Plot

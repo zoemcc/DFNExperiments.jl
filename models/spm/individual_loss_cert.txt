@@ -1,37 +1,37 @@
-total_loss: 0.04333330646486012
+total_loss: 0.0019352054881946387
 
 eq losses:
 
 eq 1:
 Differential(t)(c_s_n_xav(t, r_n)) ~ (8.813457647415216Differential(r_n)((r_n^2)*Differential(r_n)(c_s_n_xav(t, r_n)))) / (r_n^2)
-loss: 0.021274893129910745
+loss: 0.0016536949375241285
 
 eq 2:
 Differential(t)(c_s_p_xav(t, r_p)) ~ (22.598609352346717Differential(r_p)((r_p^2)*Differential(r_p)(c_s_p_xav(t, r_p)))) / (r_p^2)
-loss: 0.008797573400883682
+loss: 0.00034783921991503563
 
 ic bc losses:
 
 ic_bc 1:
 c_s_n_xav(0, r_n) ~ 0.8000000000000016
-loss: 2.209402758076732e-32
+loss: 1.9625104794247537e-32
 
 ic_bc 2:
 c_s_p_xav(0, r_p) ~ 0.6000000000000001
-loss: 1.0965763620854824e-32
+loss: 1.0795167167580486e-32
 
 ic_bc 3:
 Differential(r_n)(c_s_n_xav(t, 0.0)) ~ 0.0
-loss: 1.162381455145558e-9
+loss: 1.1704471734719492e-7
 
 ic_bc 4:
 Differential(r_n)(c_s_n_xav(t, 1.0)) ~ -0.14182855923368468
-loss: 9.291269260755178e-5
+loss: 1.4763947478840333e-7
 
 ic_bc 5:
 Differential(r_p)(c_s_p_xav(t, 0.0)) ~ 0.0
-loss: 6.422983925500678e-11
+loss: 6.434733957575867e-9
 
 ic_bc 6:
 Differential(r_p)(c_s_p_xav(t, 1.0)) ~ 0.03237700710041634
-loss: 3.677896756491173e-6
+loss: 6.792700255782299e-9
