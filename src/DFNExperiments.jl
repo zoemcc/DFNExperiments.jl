@@ -22,7 +22,7 @@ include("multi_dimensional_function.jl")
 
 abstract type AbstractPyBaMMModel end
 
-Base.nameof(term::Term{Real, Base.ImmutableDict{DataType, Any}}) = (nameof ∘ operation ∘ Symbolics.value)(term)
+Base.nameof(term::Term{Real,Base.ImmutableDict{DataType,Any}}) = (nameof ∘ operation ∘ Symbolics.value)(term)
 
 pybamm_func_str(::AbstractPyBaMMModel) = throw("Not implemented")
 include_q_model(::AbstractPyBaMMModel) = throw("Not implemented")
@@ -85,7 +85,7 @@ end
 
 pybamm_func_str(::SPMeModel) = "spme"
 include_q_model(::SPMeModel) = false
-num_pts_validation(::SPMeModel) = 400
+num_pts_validation(::SPMeModel) = 600
 num_tsteps_validation(::SPMeModel) = 8000
 large_interp_grid_length_validation(::SPMeModel) = 200
 large_grid_tsteps_validation(::SPMeModel) = 2000
@@ -137,11 +137,11 @@ end
 
 pybamm_func_str(::DFNModel) = "dfn"
 include_q_model(::DFNModel) = false
-num_pts_validation(::DFNModel) = 300
+num_pts_validation(::DFNModel) = 200
 num_tsteps_validation(::DFNModel) = 8000
-large_interp_grid_length_validation(::DFNModel) = 100
+large_interp_grid_length_validation(::DFNModel) = 40
 large_grid_tsteps_validation(::DFNModel) = 2000
-small_interp_grid_length_validation(::DFNModel) = 60
+small_interp_grid_length_validation(::DFNModel) = 40
 small_grid_tsteps_validation(::DFNModel) = 400
 num_stochastic_samples_from_loss_validation(::DFNModel) = 1024 * 16
 
@@ -184,13 +184,13 @@ struct LuxChainInterpolator{I} <: Lux.AbstractExplicitLayer
     interpolator::I
 end
 
-Lux.initialparameters(::Random.AbstractRNG, ::LuxChainInterpolator) = (int=[1.0], )
+Lux.initialparameters(::Random.AbstractRNG, ::LuxChainInterpolator) = (int=[1.0],)
 Lux.initialstates(::Random.AbstractRNG, ::LuxChainInterpolator) = NamedTuple()
 Lux.parameterlength(::LuxChainInterpolator) = 1
 Lux.statelength(::LuxChainInterpolator) = 0
 
 function (lux_chain_interpolator::LuxChainInterpolator)(x::AbstractArray, ps, st::NamedTuple)
-    if !(typeof(lux_chain_interpolator.interpolator) <: AbstractInterpolation) && size(x, 1) > 2 
+    if !(typeof(lux_chain_interpolator.interpolator) <: AbstractInterpolation) && size(x, 1) > 2
         # this uses RegularGridInterpolator which is an ND interpolator so it expects a vector in
         #inputs = [@view x[:, i] for i in 1:size(x, 2)]
         inputs = [reverse(x[:, i]) for i in 1:size(x, 2)]
@@ -216,7 +216,7 @@ end
 struct FastChainInterpolator{I}
     interpolator::I
 end
-function (fastchaininterpolator::FastChainInterpolator)(v, θ) 
+function (fastchaininterpolator::FastChainInterpolator)(v, θ)
     #println("in fastchaininterpolator")
     #@show v
     if size(v, 1) > 2
@@ -233,11 +233,11 @@ function (fastchaininterpolator::FastChainInterpolator)(v, θ)
 end
 DiffEqFlux.initial_params(::FastChainInterpolator) = Float64[]
 
-function generate_sim_model_and_test(model::M; current_input=false, include_q=false, output_dir=nothing, num_pts=400, num_tsteps=4000, 
-        large_interp_grid_length=200, large_grid_tsteps_length=2000, small_interp_grid_length=100, small_grid_tsteps_length=400,
-        num_stochastic_samples_from_loss=1024, writemodel=true, writesimdata=true) where {M <: AbstractPyBaMMModel}
+function generate_sim_model_and_test(model::M; current_input=false, include_q=false, output_dir=nothing, num_pts=400, num_tsteps=4000,
+    large_interp_grid_length=200, large_grid_tsteps_length=2000, small_interp_grid_length=100, small_grid_tsteps_length=400,
+    num_stochastic_samples_from_loss=1024, writemodel=true, writesimdata=true) where {M<:AbstractPyBaMMModel}
     model_str = pybamm_func_str(model)
-    current_input_str = current_input ? "True" : "False" 
+    current_input_str = current_input ? "True" : "False"
     include_q_str = include_q ? "True" : "False"
     sim, mtk_str, variables = py"solve_plot_generate(*$$(model_str)(), current_input=$$(current_input_str), include_q=$$(include_q_str), num_pts=$$(num_pts), num_tsteps=$$(num_tsteps))"
 
@@ -280,7 +280,9 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
         @show dv_pybamm_interpolation_function
         deps = dependent_variables_to_dependencies[nameof(dv)]
         num_deps = length(deps)
-        if extraprints @show num_deps end
+        if extraprints
+            @show num_deps
+        end
         py_axis_name = (:x, :y, :z)
         function iv_ranges_from_grid_length(tsteps_length, grid_length)
             iv_ranges = map(1:num_deps) do i
@@ -313,9 +315,9 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
         #@show dv_mat
         dv_mat = first.(dv_mat)
         #if num_deps <= 2
-            #dv_mat = first.(dv_mat)
+        #dv_mat = first.(dv_mat)
         #else
-            #dv_mat = first(dv_mat)
+        #dv_mat = first(dv_mat)
         #end
         @show large_grid_tsteps_validation, large_interp_grid_length
         @show length.(scaled_iv_ranges)
@@ -359,9 +361,9 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
         ),
         :dvs => Dict(
             :names => dv_names,
-            :deps => [collect(dependent_variables_to_dependencies[dv_name]) for dv_name in dv_names], 
+            :deps => [collect(dependent_variables_to_dependencies[dv_name]) for dv_name in dv_names],
             :data => dvs_data_blob,
-        ) 
+        )
     )
 
     if typeof(output_dir) <: AbstractString
@@ -389,7 +391,7 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
 
 
     println("generating PINN discretization from the simulation interpolation to test against")
-    strategy =  NeuralPDE.StochasticTraining(num_stochastic_samples_from_loss, num_stochastic_samples_from_loss)
+    strategy = NeuralPDE.StochasticTraining(num_stochastic_samples_from_loss, num_stochastic_samples_from_loss)
     discretization = NeuralPDE.PhysicsInformedNN(dvs_luxchain, strategy)
 
     pinnrep = NeuralPDE.symbolic_discretize(pde_system, discretization)
@@ -419,14 +421,13 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
 
     prob = NeuralPDE.discretize(pde_system, discretization)
     total_loss = prob.f(flat_init_params, Float64[])
-    #@show total_loss
 
-    loss_cert_string = "total_loss: $total_loss\n\n" * "eq losses:\n\n" * 
-    join(map(eq_loss_certs) do (i, eq, loss)
-        string("eq $i:\n", eq, "\nloss: ", loss)
-    end, "\n\n") * "\n\nic bc losses:\n\n" * join(map(ic_bc_loss_certs) do (i, ic_bc, loss)
-        string("ic_bc $i:\n", ic_bc, "\nloss: ", loss)
-    end, "\n\n") * "\n"
+    loss_cert_string = "total_loss: $total_loss\n\n" * "eq losses:\n\n" *
+                       join(map(eq_loss_certs) do (i, eq, loss)
+                               string("eq $i:\n", eq, "\nloss: ", loss)
+                           end, "\n\n") * "\n\nic bc losses:\n\n" * join(map(ic_bc_loss_certs) do (i, ic_bc, loss)
+                               string("ic_bc $i:\n", ic_bc, "\nloss: ", loss)
+                           end, "\n\n") * "\n"
 
     # write loss_cert_string to file 
     if typeof(output_dir) <: AbstractString
@@ -439,30 +440,13 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
     end
 
 
-    #@show prob
-    #@show typeof(prob)
-    #@show prob.f
+    (; sim_data_nt, pde_system, sim, variables,
+        independent_variables_to_pybamm_names,
+        dependent_variables_to_pybamm_names,
+        dependent_variables_to_dependencies,
+        dvs_interpolation, dvs_luxchain,
+        prob, total_loss, pinnrep, discretization)
 
-
-
-    (sim_data=sim_data_nt, pde_system=pde_system, sim=sim, variables=variables, 
-    independent_variables_to_pybamm_names=independent_variables_to_pybamm_names, 
-    dependent_variables_to_pybamm_names=dependent_variables_to_pybamm_names,
-    dependent_variables_to_dependencies=dependent_variables_to_dependencies,
-    dvs_interpolation=dvs_interpolation,
-    dvs_luxchain=dvs_luxchain,
-    prob=prob,
-    total_loss=total_loss,
-    pinnrep=pinnrep,
-    discretization=discretization)
-    #"""
-    #(sim_data=sim_data_nt, pde_system=pde_system, sim=sim, variables=variables, 
-    #independent_variables_to_pybamm_names=independent_variables_to_pybamm_names, 
-    #dependent_variables_to_pybamm_names=dependent_variables_to_pybamm_names,
-    #dependent_variables_to_dependencies=dependent_variables_to_dependencies,
-    #dvs_interpolation=dvs_interpolation,
-    #dvs_luxchain=dvs_luxchain,)
-    #"""
 end
 
 
@@ -475,17 +459,17 @@ function read_sim_data(output_dir_or_file::AbstractString)
     else
         throw("Invalid path.  Path must be either the simulation json file or the directory that contains the sim.json file.")
     end
-    sim_data_strs = JSON.parse(open(f->read(f, String), sim_filename, "r"))
+    sim_data_strs = JSON.parse(open(f -> read(f, String), sim_filename, "r"))
     iv_syms = tuple(Symbol.(sim_data_strs["ivs"]["names"])...)
-    iv_data = tuple(map(x->Float64.(x), (sim_data_strs["ivs"]["data"]))...)
+    iv_data = tuple(map(x -> Float64.(x), (sim_data_strs["ivs"]["data"]))...)
     iv_nt = NamedTuple{iv_syms}(iv_data)
-    
+
     dv_syms = tuple(Symbol.(sim_data_strs["dvs"]["names"])...)
-    dv_deps = tuple(map(x->NamedTuple{tuple(Symbol.(x)...)}(tuple((1:length(x))...)), sim_data_strs["dvs"]["deps"])...)
-    dv_data = tuple(map(recursive_array_to_array, sim_data_strs["dvs"]["data"])...) 
+    dv_deps = tuple(map(x -> NamedTuple{tuple(Symbol.(x)...)}(tuple((1:length(x))...)), sim_data_strs["dvs"]["deps"])...)
+    dv_data = tuple(map(recursive_array_to_array, sim_data_strs["dvs"]["data"])...)
     dv_data_nt = NamedTuple{dv_syms}(dv_data)
     dv_deps_nt = NamedTuple{dv_syms}(dv_deps)
-    sim_data = (ivs = iv_nt, dvs = dv_data_nt, dv_deps = dv_deps_nt)
+    sim_data = (ivs=iv_nt, dvs=dv_data_nt, dv_deps=dv_deps_nt)
 
 end
 read_sim_data(model::AbstractPyBaMMModel) = read_sim_data(get_model_dir(model))

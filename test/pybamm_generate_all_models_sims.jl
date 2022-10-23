@@ -4,7 +4,7 @@ if rebuild
     using Pkg
     Pkg.build("PyCall")
 end
-begin 
+begin
     using DFNExperiments
     using FiniteDifferences
     using DiffEqFlux, NeuralPDE
@@ -17,7 +17,7 @@ begin
     #using Infiltrator
 end
 
-begin 
+begin
     ev = Float64[]
     #models = [SPMModel(), SPMeModel()]
     #SPMnoRModel(), 
@@ -36,13 +36,13 @@ begin
     current_input = false
     include_q = false
     #model = all_models[1]
-    j = 1
+    j = 3
     i = j
     # 5
-    bad_models = [7]
-    for i in bad_models
+    bad_models = [3]
+    #for i in bad_models
     #for i in 7:7
-    #begin
+    begin
         model = all_models[i]
         #include_q = DFNExperiments.include_q_model(model)
         models_dir = abspath(joinpath(@__DIR__, "..", "models"))
@@ -50,9 +50,9 @@ begin
         num_pts = num_pts_validation(model)
         num_tsteps = num_tsteps_validation(model)
         large_interp_grid_length = large_interp_grid_length_validation(model)
-        large_grid_tsteps_length = large_grid_tsteps_validation(model) 
+        large_grid_tsteps_length = large_grid_tsteps_validation(model)
         small_interp_grid_length = small_interp_grid_length_validation(model)
-        small_grid_tsteps_length = small_grid_tsteps_validation(model) 
+        small_grid_tsteps_length = small_grid_tsteps_validation(model)
         num_stochastic_samples_from_loss = num_stochastic_samples_from_loss_validation(model)
         @show num_pts
         @show large_interp_grid_length
@@ -63,21 +63,21 @@ begin
         output_dir = joinpath(models_dir, "$(model_str)")
         model_file = joinpath(output_dir, "model.jl")
         loss_file = joinpath(output_dir, "loss_certificate.txt")
-        writemodel=false
-        writesimdata=true
-        writeloss=true
+        writemodel = false
+        writesimdata = true
+        writeloss = true
 
         @show model
         #sim_data, pde_system, sim, variables = generate_sim_model(model; current_input=current_input, output_dir=output_dir, num_pts=num_pts)
-        sim_data, pde_system, sim, variables, independent_variables_to_pybamm_names, 
-            dependent_variables_to_pybamm_names, dependent_variables_to_dependencies, dvs_interpolation,
-            dvs_fastchain, prob, total_loss, pinnrep, discretization = 
-                generate_sim_model_and_test(model; current_input=current_input, include_q=include_q, output_dir=output_dir, num_pts=num_pts,
-                    num_tsteps=num_tsteps, large_interp_grid_length=large_interp_grid_length, small_interp_grid_length=small_interp_grid_length,
-                    large_grid_tsteps_length=large_grid_tsteps_length, small_grid_tsteps_length=small_grid_tsteps_length,
-                    num_stochastic_samples_from_loss=num_stochastic_samples_from_loss,
-                    writemodel=writemodel, writesimdata=writesimdata
-                    )
+        @unpack sim_data_nt, pde_system, sim, variables, independent_variables_to_pybamm_names,
+        dependent_variables_to_pybamm_names, dependent_variables_to_dependencies, dvs_interpolation,
+        dvs_fastchain, prob, total_loss, pinnrep, discretization =
+            generate_sim_model_and_test(model; current_input=current_input, include_q=include_q, output_dir=output_dir, num_pts=num_pts,
+                num_tsteps=num_tsteps, large_interp_grid_length=large_interp_grid_length, small_interp_grid_length=small_interp_grid_length,
+                large_grid_tsteps_length=large_grid_tsteps_length, small_grid_tsteps_length=small_grid_tsteps_length,
+                num_stochastic_samples_from_loss=num_stochastic_samples_from_loss,
+                writemodel=writemodel, writesimdata=writesimdata
+            )
         """
         results_nt = generate_sim_model_and_test(model; current_input=current_input, include_q=include_q, output_dir=output_dir, num_pts=num_pts,
                     large_interp_grid_length=large_interp_grid_lengths, small_interp_grid_length=small_interp_grid_length,
@@ -102,22 +102,22 @@ begin
     end
 end
 #loss_file = joinpath(output_dir, "loss_certificate.txt")
-        #solvars = [sim.solution.__getitem__(var) for var in variables]
+#solvars = [sim.solution.__getitem__(var) for var in variables]
 
-"""
 c_e_n_lf = pinnrep.loss_functions.datafree_pde_loss_functions[3]
 c_e_p_lf = pinnrep.loss_functions.datafree_pde_loss_functions[5]
 flat_init_params = pinnrep.flat_init_params
 Nt = 400
 Nx = 200
-ts = range(0., 0.159, Nt)
+ts = range(0.0, 0.159, Nt)
+x_ns = range(0.0, 0.4444444444444445, Nx)
 x_ns = range(0.0, 0.4444444444444445, Nx)
 ts_x_ns = cartesian_product(ts, x_ns; flat=Val{true})
 c_e_n_s_raw = reshape(c_e_n_lf(ts_x_ns, flat_init_params), (Nt, Nx))
 c_e_n_s_abs = abs.(c_e_n_s_raw)
 c_e_n_s_log_abs = log.(c_e_n_s_abs)
-heatmap(ts, x_ns, c_e_n_s_abs', title="abs loss for the c_e_n differential equation")
-heatmap(ts, x_ns, c_e_n_s_log_abs', title="log abs loss for the c_e_n differential equation")
+p1 = heatmap(ts, x_ns, c_e_n_s_abs', title="abs loss for the c_e_n differential equation")
+p2 = heatmap(ts, x_ns, c_e_n_s_log_abs', title="log abs loss for the c_e_n differential equation")
 
 x_ps = range(0.5555555555555556, 1.0, Nx)
 ts_x_ps = cartesian_product(ts, x_ps; flat=Val{true})
@@ -126,9 +126,20 @@ c_e_p_s_abs = abs.(c_e_p_s_raw)
 c_e_p_s_log_abs = log.(c_e_p_s_abs)
 heatmap(ts, x_ps, c_e_p_s_abs', title="abs loss for the c_e_p differential equation")
 heatmap(ts, x_ps, c_e_p_s_log_abs', title="log abs loss for the c_e_p differential equation")
-"""
 
+@unpack domains, eqs, bcs, dict_indvars, dict_depvars, flat_init_params = pinnrep
+strategy = discretization.strategy
+eltypeθ = eltype(pinnrep.flat_init_params)
+bounds = get_bounds(domains, eqs, bcs, eltypeθ, dict_indvars, dict_depvars, strategy)
 
+dist = NeuralPDE.distance_to_boundary_function(bounds[1][1], 1 / 10)
+
+dist(ts_x_ns)
+ts_x = collect(hcat(ts, fill(0.1, 400))')
+dists = dist(ts_x)[1, :]
+plot(ts, dists, title="distance to boundary")
+plot(ts, dists .^ 2, title="distance squared to boundary")
+nothing
 
 
 
