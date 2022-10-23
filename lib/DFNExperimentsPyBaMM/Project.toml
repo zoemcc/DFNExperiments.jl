@@ -1,0 +1,16 @@
+name = "DFNExperimentsPyBaMM"
+uuid = "69b26bb1-b711-49ad-b930-aa3b84a70a70"
+authors = ["Zoe McCarthy <zoemccarthy12@gmail.com> and contributors"]
+version = "0.1.0"
+
+[deps]
+DFNExperiments = "3a0abec3-6923-4dbb-8c3f-2db12d5cc016"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

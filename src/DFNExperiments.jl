@@ -12,7 +12,6 @@ using JSON
 using IterTools
 using IfElse
 using Plots, LinearAlgebra, TensorBoardLogger
-using PyCall
 
 include("utils.jl")
 
@@ -146,14 +145,6 @@ small_grid_tsteps_validation(::DFNModel) = 400
 num_stochastic_samples_from_loss_validation(::DFNModel) = 1024 * 16
 
 
-include("generate_py.jl")
-
-function __init__()
-    #@require PyCall="438e738f-606a-5dbb-bf0a-cddfbfd45ab0" begin 
-    begin
-        initialize_pybamm_funcs()
-    end
-end
 
 include("plot_log.jl")
 
@@ -233,13 +224,16 @@ function (fastchaininterpolator::FastChainInterpolator)(v, θ)
 end
 DiffEqFlux.initial_params(::FastChainInterpolator) = Float64[]
 
+function pybamm_generate(model_str, current_input, include_q, num_pts, num_tsteps)
+    throw("Need to load PyBaMM subpackage")
+    return nothing, nothing, nothing
+end
+
 function generate_sim_model_and_test(model::M; current_input=false, include_q=false, output_dir=nothing, num_pts=400, num_tsteps=4000,
     large_interp_grid_length=200, large_grid_tsteps_length=2000, small_interp_grid_length=100, small_grid_tsteps_length=400,
     num_stochastic_samples_from_loss=1024, writemodel=true, writesimdata=true) where {M<:AbstractPyBaMMModel}
     model_str = pybamm_func_str(model)
-    current_input_str = current_input ? "True" : "False"
-    include_q_str = include_q ? "True" : "False"
-    sim, mtk_str, variables = py"solve_plot_generate(*$$(model_str)(), current_input=$$(current_input_str), include_q=$$(include_q_str), num_pts=$$(num_pts), num_tsteps=$$(num_tsteps))"
+    sim, mtk_str, variables = pybamm_generate(model_str, current_input, include_q, num_pts, num_tsteps)
 
     if typeof(output_dir) <: AbstractString
         if !isdir(output_dir)
