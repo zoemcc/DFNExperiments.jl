@@ -1,6 +1,7 @@
 module DFNExperimentsPyBaMM
 
 using DFNExperiments
+using PyCall
 
 include("generate_py.jl")
 

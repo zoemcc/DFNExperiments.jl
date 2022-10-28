@@ -330,19 +330,30 @@ function generate_sim_model_and_test(model::M; current_input=false, include_q=fa
         #@show dv_data_mat
         dv_data_blob = reshape(dv_data_mat, (length.(scaled_iv_ranges_small))...)
 
-        (dv_interpolation, dv_luxchain, dv_data_blob)
+        (unscaled_iv_ranges_small, dv_interpolation, dv_luxchain, dv_data_blob)
     end
 
     ivs_range = map(pde_system.domain) do var_domain
+        var = var_domain.variables
+        @show var
+        @show typeof(var)
         domain = var_domain.domain
-        iv_range = range(domain, small_interp_grid_length)
+        iv_range = if nameof(var) == :t
+            range(domain, small_grid_tsteps_length)
+        else
+            range(domain, small_interp_grid_length)
+        end
     end
-    @show ivs_range
-    @show typeof(ivs_range)
 
-    dvs_interpolation, dvs_luxchain, dvs_data_blob = unzip(dvs_interpolation_luxchain_datablob)
+    _, dvs_interpolation, dvs_luxchain, dvs_data_blob = unzip(dvs_interpolation_luxchain_datablob)
+    println("")
+    #@show ivs_range
+    @show typeof(ivs_range)
+    @show typeof(ivs_range)
+    ivs_range = collect.(ivs_range)
     @show dvs_interpolation
     @show dvs_luxchain
+    println("")
     @show size(dvs_data_blob)
     @show size(dvs_data_blob[1])
     #@show dvs_data_blob[1]

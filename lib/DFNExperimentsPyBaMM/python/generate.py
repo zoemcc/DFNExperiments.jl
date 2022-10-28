@@ -389,7 +389,7 @@ def solve_plot_generate(model, variables, current_input=False, include_q=False, 
         sim.model, geometry=sim.geometry, tspan=(0, 3600)
     )
     # save mtk_str to file
-    outfile = "./models/playground/model.jl"
+    outfile = "./../../models/playground/model.jl"
     ic(outfile)
     with open(outfile, "w") as f:
         ic("writing outfile")

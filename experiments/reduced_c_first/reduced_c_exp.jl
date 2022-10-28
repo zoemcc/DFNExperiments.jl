@@ -10,21 +10,21 @@ begin
         end
     end
 end
-@everywhere begin 
+@everywhere begin
     # https://github.com/JuliaPlots/Plots.jl/issues/1076
     # for headless plots
     ENV["GKSwstype"] = "100"
     using Pkg
     Pkg.activate(env_path)
 end
-@everywhere begin 
+@everywhere begin
     using DFNExperiments, NeuralPDE
     using ModelingToolkit, Symbolics, DomainSets
     import ModelingToolkit: Interval, infimum, supremum
     using IfElse
 end
 
-begin 
+begin
     model = ReducedCModel()
     hyperseed = 1
     num_experiments = 64
@@ -33,7 +33,7 @@ begin
         num_tasks = parse(Int, ENV["SLURM_ARRAY_TASK_COUNT"])
         @show task_id
         @show num_tasks
-        num_hyperparameters_per_task = Int(ceil(num_experiments/num_tasks))
+        num_hyperparameters_per_task = Int(ceil(num_experiments / num_tasks))
         @show num_hyperparameters_per_task
         hyperparameter_indices_to_compute = range((task_id - 1) * num_hyperparameters_per_task + 1, min(task_id * num_hyperparameters_per_task, num_experiments))
         @show hyperparameter_indices_to_compute
@@ -70,11 +70,11 @@ begin
             RandomChoice(256, 128)
         ),
         RandomChoice( # adaptive loss
-            StructGenerator( 
+            StructGenerator(
                 :MiniMaxAdaptiveLoss
             )
             #StructGenerator(
-                #:GradientScaleAdaptiveLoss
+            #:GradientScaleAdaptiveLoss
             #)
         ),
         RandomChoice( # optimizer
@@ -90,7 +90,7 @@ function main(model, hyperparameter_generator, hyperseed, num_experiments, start
     pde_system = load_model(model)
     hyperparametersweep = StructGeneratorHyperParameterSweep(hyperseed, num_experiments, hyperparameter_generator)
     hyperparameters = generate_hyperparameters(hyperparametersweep)
-    log_options = NeuralPDE.LogOptions(;plot_function=get_plot_function(model), log_dir=log_dir, 
+    log_options = NeuralPDE.LogOptions(; plot_function=get_plot_function(model), log_dir=log_dir,
         log_frequency=log_frequency, plot_frequency=plot_frequency, checkpoint_frequency=checkpoint_frequency)
     neuralpde_workers = map(NeuralPDE.NeuralPDEWorker, workers())
     experiment_manager = NeuralPDE.ExperimentManager(pde_system, hyperparameters, get_cb_func(model, log_frequency), log_options, neuralpde_workers)

@@ -6,6 +6,7 @@ if rebuild
 end
 begin
     using DFNExperiments
+    using DFNExperimentsPyBaMM
     using FiniteDifferences
     using DiffEqFlux, NeuralPDE
     using Interpolations
@@ -36,7 +37,7 @@ begin
     current_input = false
     include_q = false
     #model = all_models[1]
-    j = 3
+    j = 1
     i = j
     # 5
     bad_models = [3]
@@ -45,7 +46,7 @@ begin
     begin
         model = all_models[i]
         #include_q = DFNExperiments.include_q_model(model)
-        models_dir = abspath(joinpath(@__DIR__, "..", "models"))
+        models_dir = abspath(joinpath(@__DIR__, "..", "..", "..", "models"))
         model_str = pybamm_func_str(model)
         num_pts = num_pts_validation(model)
         num_tsteps = num_tsteps_validation(model)
@@ -71,7 +72,7 @@ begin
         #sim_data, pde_system, sim, variables = generate_sim_model(model; current_input=current_input, output_dir=output_dir, num_pts=num_pts)
         @unpack sim_data_nt, pde_system, sim, variables, independent_variables_to_pybamm_names,
         dependent_variables_to_pybamm_names, dependent_variables_to_dependencies, dvs_interpolation,
-        dvs_fastchain, prob, total_loss, pinnrep, discretization =
+        dvs_luxchain, prob, total_loss, pinnrep, discretization =
             generate_sim_model_and_test(model; current_input=current_input, include_q=include_q, output_dir=output_dir, num_pts=num_pts,
                 num_tsteps=num_tsteps, large_interp_grid_length=large_interp_grid_length, small_interp_grid_length=small_interp_grid_length,
                 large_grid_tsteps_length=large_grid_tsteps_length, small_grid_tsteps_length=small_grid_tsteps_length,
