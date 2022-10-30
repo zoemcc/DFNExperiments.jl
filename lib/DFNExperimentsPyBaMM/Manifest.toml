@@ -1327,7 +1327,7 @@ uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 version = "1.2.0"
 
 [[NeuralPDE]]
-deps = ["Adapt", "ArrayInterfaceCore", "ChainRulesCore", "ComponentArrays", "DataStructures", "DelimitedFiles", "DiffEqBase", "DiffEqNoiseProcess", "Distributed", "Distributions", "DocStringExtensions", "DomainSets", "Flux", "ForwardDiff", "Integrals", "IntegralsCubature", "LinearAlgebra", "Lux", "ModelingToolkit", "Optim", "Optimisers", "Optimization", "QuasiMonteCarlo", "Random", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLBase", "Statistics", "StochasticDiffEq", "SymbolicUtils", "Symbolics", "UnPack", "Zygote"]
+deps = ["Adapt", "ArrayInterfaceCore", "ChainRulesCore", "ComponentArrays", "DataStructures", "DelimitedFiles", "DiffEqBase", "DiffEqNoiseProcess", "Distributed", "Distributions", "DocStringExtensions", "DomainSets", "Flux", "ForwardDiff", "Infiltrator", "Integrals", "IntegralsCubature", "LinearAlgebra", "Lux", "ModelingToolkit", "Optim", "Optimisers", "Optimization", "QuasiMonteCarlo", "Random", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLBase", "Statistics", "StochasticDiffEq", "SymbolicUtils", "Symbolics", "UnPack", "Zygote"]
 path = "/home/zoe/.julia/dev/NeuralPDE.jl"
 uuid = "315f7962-48a3-4962-8226-d0f33b1235f0"
 version = "5.0.0"

@@ -12,6 +12,7 @@ using JSON
 using IterTools
 using IfElse
 using Plots, LinearAlgebra, TensorBoardLogger
+using Infiltrator
 
 include("utils.jl")
 

@@ -24,13 +24,13 @@ Dr_n = Differential(r_n)
 Dr_p = Differential(r_p)
 
 # 'X-averaged negative particle concentration' equation
-cache_6031392792534654177 = 8.813457647415216 * (1 / r_n^2 * Dr_n(r_n^2 * Dr_n(c_s_n_xav(t, r_n))))
+cache_5273316010107017181 = 8.813457647415216 * (1 / r_n^2 * Dr_n(r_n^2 * Dr_n(c_s_n_xav(t, r_n))))
 
 # 'X-averaged positive particle concentration' equation
-cache_72321472987473414 = 22.598609352346717 * (1 / r_p^2 * Dr_p(r_p^2 * Dr_p(c_s_p_xav(t, r_p))))
+cache_2109643223086803297 = 22.598609352346717 * (1 / r_p^2 * Dr_p(r_p^2 * Dr_p(c_s_p_xav(t, r_p))))
 eqs = [
-   Dt(c_s_n_xav(t, r_n)) ~ cache_6031392792534654177,
-   Dt(c_s_p_xav(t, r_p)) ~ cache_72321472987473414,
+   Dt(c_s_n_xav(t, r_n)) ~ cache_5273316010107017181,
+   Dt(c_s_p_xav(t, r_p)) ~ cache_2109643223086803297,
 ]
 
 

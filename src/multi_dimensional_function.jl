@@ -48,12 +48,12 @@ struct MultiDimensionalFunction{Func,FType<:AbstractApplyFuncType,Extra,IVsNT<:N
             @assert length(f) == num_dvs
             all_luxchains = all(map(ft_i -> ft_i <: Lux.Chain, f_types))
             if all_luxchains
-                println("hi1")
-                @show typeof(f)
+                #println("hi1")
+                #@show typeof(f)
                 initθ = Lux.initialparameters.(Random.default_rng(), f)
-                println("hi2")
-                @show initθ
-                println("hi3")
+                #println("hi2")
+                #@show initθ
+                #println("hi3")
                 param_lengths = length.(initθ)
                 param_lengths_cumulative = cumsum(vcat([0], param_lengths...))
                 param_indices = [param_lengths_cumulative[i]+1:param_lengths_cumulative[i+1] for i in 1:num_dvs]
@@ -113,11 +113,11 @@ end
         num_dvs = length(f.dvs)
         param_indices = f.extra_data[:param_indices]
         f_evals = Vector{Array{eltype(θ)}}(undef, length(f.dvs))
-        println("")
+        #println("")
         #@show axes(θ[:depvar])[1]
         depvars = keys(θ[:depvar])
-        @show length(θ[:depvar][depvars[1]])
-        println("")
+        #@show length(θ[:depvar][depvars[1]])
+        #println("")
         #@show axes(θ)[1][1]
         for i in 1:num_dvs
             ivs_i = f.dv_deps[i]
@@ -139,9 +139,9 @@ end
         if flat == Val{false}
             point_array, resize_info = cartesian_product(x...; flat=Val{true}, resize_info=Val{true}, debug=Val{false})
             transformed_array, _ = f.f(point_array, θ, st)
-            println("")
-            @show typeof(transformed_array)
-            println("")
+            #println("")
+            #@show typeof(transformed_array)
+            #println("")
             if collapse_zero_first_dim && length(f.dvs) == 1
                 reshaped_transformed_array = reshape(transformed_array, resize_info...)
             else

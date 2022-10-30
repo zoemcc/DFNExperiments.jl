@@ -11,24 +11,25 @@ function get_eval_network_at_sim_data_func(model, chains)
     function eval_network_at_sim_data(p)
         eval_at = values(sim_data[:ivs])
         network_evals = mdf(p, eval_at...; flat=Val{false})
-        println("")
-        @show ivs
-        @show dvs
-        @show dv_deps
-        @show num_dvs
-        println("")
-        @show typeof(eval_at)
-        @show size.(eval_at)
-        @show typeof(network_evals)
-        @show typeof.(network_evals)
-        @show size.(network_evals)
-        @show typeof(ground_truths)
-        @show typeof.(ground_truths)
-        @show size.(ground_truths)
+        #println("")
+        #@show ivs
+        #@show dvs
+        #@show dv_deps
+        #@show num_dvs
+        #println("")
+        #@show typeof(eval_at)
+        #@show size.(eval_at)
+        #@show typeof(network_evals)
+        #@show typeof.(network_evals)
+        #@show size.(network_evals)
+        #@show typeof(ground_truths)
+        #@show typeof.(ground_truths)
+        #@show size.(ground_truths)
 
         errors = map(i -> network_evals[i] .- ground_truths[i], 1:num_dvs)
         errors_norm = LinearAlgebra.norm.(errors)
         errors_rel = map(i -> errors_norm[i] / ground_truths_norm[i], 1:num_dvs)
+        #@infiltrate
 
         return (dvs=dvs, network_evals=network_evals, errors=errors,
             errors_norm=errors_norm, errors_rel=errors_rel)
@@ -43,11 +44,16 @@ function get_cb_func(model, log_frequency)
             if iteration[1] % log_frequency == 0
                 res = eval_network_at_sim_data(p)
                 error_rel_max = max(res[:errors_rel]...)
-                log_value(logger, "errors/max_error_relative", error_rel_max; step=iteration[1])
+                #@show res[:errors_rel]
+                #@show typeof(res[:errors_rel])
+                #@show error_rel_max
+                #@show typeof(error_rel_max)
+                NeuralPDE.logscalar(logger, error_rel_max, "errors/max_error_relative", iteration[1])
                 for (i, dv) in enumerate(res[:dvs])
-                    log_value(logger, "errors/$(string(dv))_error_norm", res[:errors_norm][i]; step=iteration[1])
-                    log_value(logger, "errors/$(string(dv))_error_relative", res[:errors_rel][i]; step=iteration[1])
+                    NeuralPDE.logscalar(logger, res[:errors_norm][i], "errors/$(string(dv))_error_norm", iteration[1])
+                    NeuralPDE.logscalar(logger, res[:errors_rel][i], "errors/$(string(dv))_error_relative", iteration[1])
                 end
+                println("Iteration $(iteration[1]), loss $(l)")
             end
             return false
         end

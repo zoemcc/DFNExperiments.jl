@@ -15,10 +15,10 @@ begin
     using IterTools
     using Term
     using Plots
-    #using Infiltrator
+    using Infiltrator
 end
 
-begin
+function main()
     ev = Float64[]
     #models = [SPMModel(), SPMeModel()]
     #SPMnoRModel(), 
@@ -70,15 +70,16 @@ begin
 
         @show model
         #sim_data, pde_system, sim, variables = generate_sim_model(model; current_input=current_input, output_dir=output_dir, num_pts=num_pts)
-        @unpack sim_data_nt, pde_system, sim, variables, independent_variables_to_pybamm_names,
-        dependent_variables_to_pybamm_names, dependent_variables_to_dependencies, dvs_interpolation,
-        dvs_luxchain, prob, total_loss, pinnrep, discretization =
+        full_results =
             generate_sim_model_and_test(model; current_input=current_input, include_q=include_q, output_dir=output_dir, num_pts=num_pts,
                 num_tsteps=num_tsteps, large_interp_grid_length=large_interp_grid_length, small_interp_grid_length=small_interp_grid_length,
                 large_grid_tsteps_length=large_grid_tsteps_length, small_grid_tsteps_length=small_grid_tsteps_length,
                 num_stochastic_samples_from_loss=num_stochastic_samples_from_loss,
                 writemodel=writemodel, writesimdata=writesimdata
             )
+        @unpack sim_data_nt, pde_system, sim, variables, independent_variables_to_pybamm_names,
+        dependent_variables_to_pybamm_names, dependent_variables_to_dependencies, dvs_interpolation,
+        dvs_luxchain, prob, total_loss, pinnrep, discretization = full_results
         """
         results_nt = generate_sim_model_and_test(model; current_input=current_input, include_q=include_q, output_dir=output_dir, num_pts=num_pts,
                     large_interp_grid_length=large_interp_grid_lengths, small_interp_grid_length=small_interp_grid_length,
@@ -101,7 +102,9 @@ begin
         # solcsn = solvars[end]
         # solcsn(t=0.15930183773127454 * solcsn.timescale, r=1.0*solcsn.length_scales["negative particle size"], x=-100.0)
     end
+    return full_results
 end
+full_results = main()
 #loss_file = joinpath(output_dir, "loss_certificate.txt")
 #solvars = [sim.solution.__getitem__(var) for var in variables]
 
