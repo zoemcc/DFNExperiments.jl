@@ -1,65 +1,77 @@
 begin
 using IfElse
-# ('negative particle',) -> r_n
-# ('positive particle',) -> r_p
-@parameters t r_n r_p
+# ('negative electrode',) -> x_n
+# ('separator',) -> x_s
+# ('positive electrode',) -> x_p
+@parameters t x_n x_s x_p
 independent_variables_to_pybamm_names = Dict(
   :t => "Time",
-  :r_n => "negative particle",
-  :r_p => "positive particle",
+  :x_n => "negative electrode",
+  :x_s => "separator",
+  :x_p => "positive electrode",
 )
-# 'X-averaged negative particle concentration' -> c_s_n_xav
-# 'X-averaged positive particle concentration' -> c_s_p_xav
-@variables c_s_n_xav(..) c_s_p_xav(..)
+# 'Electrolyte concentration neg' -> c_e_n
+# 'Electrolyte concentration sep' -> c_e_s
+# 'Electrolyte concentration pos' -> c_e_p
+@variables c_e_n(..) c_e_s(..) c_e_p(..)
 dependent_variables_to_pybamm_names = Dict(
-  :c_s_n_xav => "X-averaged negative particle concentration",
-  :c_s_p_xav => "X-averaged positive particle concentration",
+  :c_e_n => "Electrolyte concentration neg",
+  :c_e_s => "Electrolyte concentration sep",
+  :c_e_p => "Electrolyte concentration pos",
 )
 dependent_variables_to_dependencies = Dict(
-  :c_s_n_xav => (:t, :r_n),
-  :c_s_p_xav => (:t, :r_p),
+  :c_e_n => (:t, :x_n),
+  :c_e_s => (:t, :x_s),
+  :c_e_p => (:t, :x_p),
 )
 Dt = Differential(t)
-Dr_n = Differential(r_n)
-Dr_p = Differential(r_p)
+Dx_n = Differential(x_n)
+Dx_s = Differential(x_s)
+Dx_p = Differential(x_p)
 
-# 'X-averaged negative particle concentration' equation
-cache_5273316010107017181 = 8.813457647415216 * (1 / r_n^2 * Dr_n(r_n^2 * Dr_n(c_s_n_xav(t, r_n))))
-
-# 'X-averaged positive particle concentration' equation
-cache_2109643223086803297 = 22.598609352346717 * (1 / r_p^2 * Dr_p(r_p^2 * Dr_p(c_s_p_xav(t, r_p))))
+# 'Electrolyte concentration' equation
+cache_m8073679220259035733_n = 2.25
+cache_m8073679220259035733_s = 0.0
+cache_m8073679220259035733_p = -2.25
+cache_m2529367305092838898_n = (Dx_n(Dx_n(c_e_n(t, x_n)))) + cache_m8073679220259035733_n
+cache_m2529367305092838898_s = (Dx_s(Dx_s(c_e_s(t, x_s)))) + cache_m8073679220259035733_s
+cache_m2529367305092838898_p = (Dx_p(Dx_p(c_e_p(t, x_p)))) + cache_m8073679220259035733_p
 eqs = [
-   Dt(c_s_n_xav(t, r_n)) ~ cache_5273316010107017181,
-   Dt(c_s_p_xav(t, r_p)) ~ cache_2109643223086803297,
+   Dt(c_e_n(t, x_n)) ~ cache_m2529367305092838898_n,
+   Dt(c_e_s(t, x_s)) ~ cache_m2529367305092838898_s,
+   Dt(c_e_p(t, x_p)) ~ cache_m2529367305092838898_p,
 ]
 
 
 ics_bcs = [
    # initial conditions
-   c_s_n_xav(0, r_n) ~ 0.8000000000000016,
-   c_s_p_xav(0, r_p) ~ 0.6000000000000001,
+   c_e_n(0, x_n) ~ 1.0,
+   c_e_s(0, x_s) ~ 1.0,
+   c_e_p(0, x_p) ~ 1.0,
    # boundary conditions
-   Dr_n(c_s_n_xav(t, 0.0)) ~ 0.0,
-   Dr_n(c_s_n_xav(t, 1.0)) ~ -0.14182855923368468,
-   Dr_p(c_s_p_xav(t, 0.0)) ~ 0.0,
-   Dr_p(c_s_p_xav(t, 1.0)) ~ 0.03237700710041634,
+   Dx_n(c_e_n(t, 0.0)) ~ 0.0,
+   c_e_n(t, 0.4444444444444445) ~ c_e_s(t, 0.4444444444444445),
+   c_e_p(t, 0.5555555555555556) ~ c_e_s(t, 0.5555555555555556),
+   Dx_p(c_e_p(t, 1.0)) ~ 0.0,
 ]
 
-t_domain = Interval(0.000,0.159)
-r_n_domain = Interval(0.0, 1.0)
-r_p_domain = Interval(0.0, 1.0)
+t_domain = Interval(0.000,1.000)
+x_n_domain = Interval(0.0, 0.4444444444444445)
+x_s_domain = Interval(0.4444444444444445, 0.5555555555555556)
+x_p_domain = Interval(0.5555555555555556, 1.0)
 
 domains = [
    t in t_domain,
-   r_n in r_n_domain,
-   r_p in r_p_domain,
+   x_n in x_n_domain,
+   x_s in x_s_domain,
+   x_p in x_p_domain,
 ]
 
-ind_vars = [t, r_n, r_p]
-dep_vars = [c_s_n_xav(t, r_n), c_s_p_xav(t, r_p)]
+ind_vars = [t, x_n, x_s, x_p]
+dep_vars = [c_e_n(t, x_n), c_e_s(t, x_s), c_e_p(t, x_p)]
 
-@named SPM_pde_system = PDESystem(eqs, ics_bcs, domains, ind_vars, dep_vars)
-pde_system = SPM_pde_system
+@named reduced_c_pde_system = PDESystem(eqs, ics_bcs, domains, ind_vars, dep_vars)
+pde_system = reduced_c_pde_system
 
 nothing
 end

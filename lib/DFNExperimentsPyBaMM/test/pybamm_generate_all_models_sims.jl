@@ -1,7 +1,9 @@
 rebuild = false
+using Pkg
+Pkg.activate(joinpath(@__DIR__, ".."))
+cd(joinpath(@__DIR__, ".."))
 if rebuild
     ENV["PYTHON"] = joinpath(ENV["ANACONDA_LOCATION"], "envs", "pybamm_dev", "bin", "python")
-    using Pkg
     Pkg.build("PyCall")
 end
 begin
@@ -42,8 +44,8 @@ function main()
     # 5
     bad_models = [3]
     #for i in bad_models
-    #for i in 7:7
-    begin
+    all_results = map(1:6) do i
+        #begin
         model = all_models[i]
         #include_q = DFNExperiments.include_q_model(model)
         models_dir = abspath(joinpath(@__DIR__, "..", "..", "..", "models"))
@@ -77,9 +79,9 @@ function main()
                 num_stochastic_samples_from_loss=num_stochastic_samples_from_loss,
                 writemodel=writemodel, writesimdata=writesimdata
             )
-        @unpack sim_data_nt, pde_system, sim, variables, independent_variables_to_pybamm_names,
-        dependent_variables_to_pybamm_names, dependent_variables_to_dependencies, dvs_interpolation,
-        dvs_luxchain, prob, total_loss, pinnrep, discretization = full_results
+        (; sim_data_nt, pde_system, sim, variables, independent_variables_to_pybamm_names,
+            dependent_variables_to_pybamm_names, dependent_variables_to_dependencies, dvs_interpolation,
+            dvs_luxchain, prob, total_loss, pinnrep, discretization) = full_results
         """
         results_nt = generate_sim_model_and_test(model; current_input=current_input, include_q=include_q, output_dir=output_dir, num_pts=num_pts,
                     large_interp_grid_length=large_interp_grid_lengths, small_interp_grid_length=small_interp_grid_length,
@@ -96,18 +98,20 @@ function main()
                 end
             end
         end
+        return full_results
 
         #include(model_file)
         #solvars = [sim.solution.__getitem__(var) for var in variables]
         # solcsn = solvars[end]
         # solcsn(t=0.15930183773127454 * solcsn.timescale, r=1.0*solcsn.length_scales["negative particle size"], x=-100.0)
     end
-    return full_results
+    return all_results
 end
-full_results = main()
+all_results = main()
 #loss_file = joinpath(output_dir, "loss_certificate.txt")
 #solvars = [sim.solution.__getitem__(var) for var in variables]
 
+"""
 c_e_n_lf = pinnrep.loss_functions.datafree_pde_loss_functions[3]
 c_e_p_lf = pinnrep.loss_functions.datafree_pde_loss_functions[5]
 flat_init_params = pinnrep.flat_init_params
@@ -145,6 +149,8 @@ plot(ts, dists, title="distance to boundary")
 plot(ts, dists .^ 2, title="distance squared to boundary")
 nothing
 
+"""
+nothing
 
 
 """
