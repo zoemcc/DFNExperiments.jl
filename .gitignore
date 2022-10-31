@@ -1,2 +1,4 @@
 /Manifest.toml
 /logs
+models/playground
+models/playground/model.jl
