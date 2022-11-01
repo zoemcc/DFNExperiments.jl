@@ -43,6 +43,7 @@ struct SPMnoRModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::SPMnoRModel) = "spm_no_r"
+get_symbol(::SPMnoRModel) = :SPMnoRModel
 include_q_model(::SPMnoRModel) = false
 num_pts_validation(::SPMnoRModel) = 400
 num_tsteps_validation(::SPMnoRModel) = 4000
@@ -56,6 +57,7 @@ struct SPMModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::SPMModel) = "spm"
+get_symbol(::SPMModel) = :SPMModel
 include_q_model(::SPMModel) = false
 num_pts_validation(::SPMModel) = 400
 num_tsteps_validation(::SPMModel) = 8000
@@ -70,6 +72,7 @@ struct ReducedCModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::ReducedCModel) = "reduced_c"
+get_symbol(::ReducedCModel) = :ReducedCModel
 include_q_model(::ReducedCModel) = false
 num_pts_validation(::ReducedCModel) = 400
 num_tsteps_validation(::ReducedCModel) = 8000
@@ -84,6 +87,7 @@ struct SPMeModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::SPMeModel) = "spme"
+get_symbol(::SPMeModel) = :SPMeModel
 include_q_model(::SPMeModel) = false
 num_pts_validation(::SPMeModel) = 600
 num_tsteps_validation(::SPMeModel) = 8000
@@ -97,6 +101,7 @@ struct ReducedCPhiModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::ReducedCPhiModel) = "reduced_c_phi"
+get_symbol(::ReducedCPhiModel) = :ReducedCPhiModel
 include_q_model(::ReducedCPhiModel) = false
 num_pts_validation(::ReducedCPhiModel) = 400
 num_tsteps_validation(::ReducedCPhiModel) = 8000
@@ -110,6 +115,7 @@ struct ReducedCPhiJModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::ReducedCPhiJModel) = "reduced_c_phi_j"
+get_symbol(::ReducedCPhiJModel) = :ReducedCPhiJModel
 include_q_model(::ReducedCPhiJModel) = false
 num_pts_validation(::ReducedCPhiJModel) = 400
 num_tsteps_validation(::ReducedCPhiJModel) = 8000
@@ -123,6 +129,7 @@ struct DFNnoRModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::DFNnoRModel) = "dfn_no_r"
+get_symbol(::DFNnoRModel) = :DFNnoRModel
 include_q_model(::DFNnoRModel) = false
 num_pts_validation(::DFNnoRModel) = 400
 num_tsteps_validation(::DFNnoRModel) = 8000
@@ -136,6 +143,7 @@ struct DFNModel <: AbstractPyBaMMModel
 end
 
 pybamm_func_str(::DFNModel) = "dfn"
+get_symbol(::DFNModel) = :DFNModel
 include_q_model(::DFNModel) = false
 num_pts_validation(::DFNModel) = 200
 num_tsteps_validation(::DFNModel) = 8000
@@ -493,6 +501,13 @@ function get_sim_filename(model::AbstractPyBaMMModel)
     joinpath(get_model_dir(model), "sim.json")
 end
 
+function model_string_to_model(model_string)
+    all_models = [SPMnoRModel(), SPMModel(), ReducedCModel(), SPMeModel(), ReducedCPhiModel(), ReducedCPhiJModel(), DFNnoRModel(), DFNModel()]
+    model_strings = map(pybamm_func_str, all_models)
+    model_string_to_model_dict = Dict(model_strings .=> all_models)
+    return model_string_to_model_dict[model_string]
+end
+
 function get_interpolator_from_model(model)
     sim_filename = DFNExperiments.get_sim_filename(model)
     sim_data_nt = read_sim_data(sim_filename)
@@ -519,6 +534,8 @@ struct InterpolationPlusNetwork{MOD<:DFNExperiments.AbstractPyBaMMModel,NETS<:Ne
         new{typeof(model),typeof(networks)}(model, networks)
     end
 end
+
+InterpolationPlusNetwork(model_string::String, networks::NeuralPDE.AbstractNN) = InterpolationPlusNetwork(DFNExperiments.model_string_to_model(model_string), networks)
 
 function NeuralPDE.getfunction(rng::Random.AbstractRNG, int_plus_net_spec::InterpolationPlusNetwork,
     inputdims::AbstractVector{Int})
@@ -547,7 +564,7 @@ export large_interp_grid_length_validation, small_interp_grid_length_validation
 export large_grid_tsteps_validation, small_grid_tsteps_validation
 export num_stochastic_samples_from_loss_validation
 export get_sim_filename, LuxChainInterpolator, get_interpolator_from_model
-export InterpolationPlusNetwork
+export InterpolationPlusNetwork, get_symbol
 
 
 end
