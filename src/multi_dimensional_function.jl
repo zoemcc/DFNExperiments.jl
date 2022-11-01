@@ -46,7 +46,7 @@ struct MultiDimensionalFunction{Func,FType<:AbstractApplyFuncType,Extra,IVsNT<:N
         if FType == VectorOfParameterizedMDFApplyFuncType
             f_types = typeof.(f)
             @assert length(f) == num_dvs
-            all_luxchains = all(map(ft_i -> ft_i <: Lux.Chain, f_types))
+            all_luxchains = all(map(ft_i -> ft_i <: Lux.AbstractExplicitLayer, f_types))
             if all_luxchains
                 #println("hi1")
                 #@show typeof(f)
