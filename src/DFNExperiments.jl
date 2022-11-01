@@ -508,7 +508,11 @@ function model_string_to_model(model_string)
     return model_string_to_model_dict[model_string]
 end
 
-function get_interpolator_from_model(model)
+function NeuralPDE.get_interpolator_from_model(model_string::AbstractString)
+    return NeuralPDE.get_interpolator_from_model(model_string_to_model(model_string))
+end
+
+function NeuralPDE.get_interpolator_from_model(model::AbstractPyBaMMModel)
     sim_filename = DFNExperiments.get_sim_filename(model)
     sim_data_nt = read_sim_data(sim_filename)
     function iv_to_range(iv)
@@ -526,30 +530,6 @@ function get_interpolator_from_model(model)
     return interpolators
 end
 
-struct NeuralPDE.InterpolationPlusNetwork{MOD<:DFNExperiments.AbstractPyBaMMModel,NETS<:NeuralPDE.AbstractNN} <: NeuralPDE.AbstractNN
-    model::MOD
-    networks::NETS
-
-    SciMLBase.@add_kwonly function InterpolationPlusNetwork(model::AbstractPyBaMMModel, networks::NeuralPDE.AbstractNN)
-        new{typeof(model),typeof(networks)}(model, networks)
-    end
-end
-
-NeuralPDE.InterpolationPlusNetwork(model_string::String, networks::NeuralPDE.AbstractNN) = InterpolationPlusNetwork(DFNExperiments.model_string_to_model(model_string), networks)
-
-function NeuralPDE.getfunction(rng::Random.AbstractRNG, int_plus_net_spec::NeuralPDE.InterpolationPlusNetwork,
-    inputdims::AbstractVector{Int})
-    (net_chains, initial_params) = NeuralPDE.getfunction(rng, int_plus_net_spec.networks, inputdims)
-    interpolators = get_interpolator_from_model(int_plus_net_spec.model)
-    (int_plus_net, params) = unzip(map(zip(interpolators, net_chains, initial_params)) do (interpolator, net_chain, initial_param)
-        int_params = Lux.initialparameters(rng, interpolator)
-        int_plus_net_i = Lux.Parallel(+, interpolator, net_chain)
-        initial_merged_params = (layer_1=int_params, layer_2=initial_param)
-        #initial_merged_params = Lux.initialparameters(int_plus_net_i)
-        (int_plus_net_i, initial_merged_params)
-    end)
-    return (; int_plus_net, params)
-end
 
 
 export ty, fn, fnty
@@ -564,7 +544,7 @@ export large_interp_grid_length_validation, small_interp_grid_length_validation
 export large_grid_tsteps_validation, small_grid_tsteps_validation
 export num_stochastic_samples_from_loss_validation
 export get_sim_filename, LuxChainInterpolator, get_interpolator_from_model
-export InterpolationPlusNetwork, get_symbol
+export get_symbol
 
 
 end
