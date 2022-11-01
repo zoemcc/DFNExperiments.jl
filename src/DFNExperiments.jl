@@ -526,7 +526,7 @@ function get_interpolator_from_model(model)
     return interpolators
 end
 
-struct InterpolationPlusNetwork{MOD<:DFNExperiments.AbstractPyBaMMModel,NETS<:NeuralPDE.AbstractNN} <: NeuralPDE.AbstractNN
+struct NeuralPDE.InterpolationPlusNetwork{MOD<:DFNExperiments.AbstractPyBaMMModel,NETS<:NeuralPDE.AbstractNN} <: NeuralPDE.AbstractNN
     model::MOD
     networks::NETS
 
@@ -535,9 +535,9 @@ struct InterpolationPlusNetwork{MOD<:DFNExperiments.AbstractPyBaMMModel,NETS<:Ne
     end
 end
 
-InterpolationPlusNetwork(model_string::String, networks::NeuralPDE.AbstractNN) = InterpolationPlusNetwork(DFNExperiments.model_string_to_model(model_string), networks)
+NeuralPDE.InterpolationPlusNetwork(model_string::String, networks::NeuralPDE.AbstractNN) = InterpolationPlusNetwork(DFNExperiments.model_string_to_model(model_string), networks)
 
-function NeuralPDE.getfunction(rng::Random.AbstractRNG, int_plus_net_spec::InterpolationPlusNetwork,
+function NeuralPDE.getfunction(rng::Random.AbstractRNG, int_plus_net_spec::NeuralPDE.InterpolationPlusNetwork,
     inputdims::AbstractVector{Int})
     (net_chains, initial_params) = NeuralPDE.getfunction(rng, int_plus_net_spec.networks, inputdims)
     interpolators = get_interpolator_from_model(int_plus_net_spec.model)
