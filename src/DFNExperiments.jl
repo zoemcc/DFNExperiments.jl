@@ -176,9 +176,9 @@ struct LuxChainInterpolator{I} <: Lux.AbstractExplicitLayer
     interpolator::I
 end
 
-Lux.initialparameters(::Random.AbstractRNG, ::LuxChainInterpolator) = (int=[1.0],)
+Lux.initialparameters(::Random.AbstractRNG, ::LuxChainInterpolator) = NamedTuple()
 Lux.initialstates(::Random.AbstractRNG, ::LuxChainInterpolator) = NamedTuple()
-Lux.parameterlength(::LuxChainInterpolator) = 1
+Lux.parameterlength(::LuxChainInterpolator) = 0
 Lux.statelength(::LuxChainInterpolator) = 0
 
 function (lux_chain_interpolator::LuxChainInterpolator)(x::AbstractArray, ps, st::NamedTuple)
@@ -489,6 +489,52 @@ function SymbolicUtils.Code.function_to_expr(::typeof(IfElse.ifelse), O, st::Sym
     :(IfElse.ifelse($(toexpr(args[1], st)), $(toexpr(args[2], st)), $(toexpr(args[3], st))))
 end
 
+function get_sim_filename(model::AbstractPyBaMMModel)
+    joinpath(get_model_dir(model), "sim.json")
+end
+
+function get_interpolator_from_model(model)
+    sim_filename = DFNExperiments.get_sim_filename(model)
+    sim_data_nt = read_sim_data(sim_filename)
+    function iv_to_range(iv)
+        iv_vector = sim_data_nt.ivs[iv]
+        iv_range = range(iv_vector[begin], iv_vector[end]; length=length(iv_vector))
+        return iv_range
+    end
+    interpolators = map(eachindex(sim_data_nt.dvs)) do i
+        dv_grid = sim_data_nt.dvs[i]
+        dv_deps = sim_data_nt.dv_deps[i]
+        iv_grid = iv_to_range.(keys(dv_deps))
+        extrapolate_interpolate_function = extrapolate(scale(interpolate(dv_grid, BSpline(Cubic(Line(OnGrid())))), iv_grid...), Line())
+        dv_interpolation = DFNExperiments.LuxChainInterpolator(extrapolate_interpolate_function)
+    end
+    return interpolators
+end
+
+struct InterpolationPlusNetwork{MOD<:DFNExperiments.AbstractPyBaMMModel,NETS<:NeuralPDE.AbstractNN} <: NeuralPDE.AbstractNN
+    model::MOD
+    networks::NETS
+
+    SciMLBase.@add_kwonly function InterpolationPlusNetwork(model::AbstractPyBaMMModel, networks::NeuralPDE.AbstractNN)
+        new{typeof(model),typeof(networks)}(model, networks)
+    end
+end
+
+function NeuralPDE.getfunction(rng::Random.AbstractRNG, int_plus_net_spec::InterpolationPlusNetwork,
+    inputdims::AbstractVector{Int})
+    (net_chains, initial_params) = NeuralPDE.getfunction(rng, int_plus_net_spec.networks, inputdims)
+    interpolators = get_interpolator_from_model(int_plus_net_spec.model)
+    (int_plus_net, params) = unzip(map(zip(interpolators, net_chains, initial_params)) do (interpolator, net_chain, initial_param)
+        int_params = Lux.initialparameters(rng, interpolator)
+        int_plus_net_i = Lux.Parallel(+, interpolator, net_chain)
+        initial_merged_params = (layer_1=int_params, layer_2=initial_param)
+        #initial_merged_params = Lux.initialparameters(int_plus_net_i)
+        (int_plus_net_i, initial_merged_params)
+    end)
+    return (; int_plus_net, params)
+end
+
+
 export ty, fn, fnty
 export generate_sim_model_and_test, read_sim_data, pybamm_func_str, load_model, get_model_dir
 export AbstractPyBaMMModel
@@ -500,6 +546,8 @@ export num_pts_validation, num_tsteps_validation
 export large_interp_grid_length_validation, small_interp_grid_length_validation
 export large_grid_tsteps_validation, small_grid_tsteps_validation
 export num_stochastic_samples_from_loss_validation
+export get_sim_filename, LuxChainInterpolator, get_interpolator_from_model
+export InterpolationPlusNetwork
 
 
 end
