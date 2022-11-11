@@ -136,7 +136,7 @@ function get_plot_function(model)
                 Ni = length(only_rangesi)
                 input_cartprodi = cartesian_product(rangeboundi...; flat=Val{true})
                 new_sizei = tuple(fill(num_perdim, num_dimsi)...)
-                pde_valsi = reshape(pde_lfi(input_cartprodi, θ), new_sizei)
+                pde_valsi = reshape(pde_lfi(input_cartprodi, θ), new_sizei) .^ 2
                 image = if Ni == 1
                     plot(only_rangesi..., pde_valsi, title=name)
                 elseif Ni == 2
@@ -167,7 +167,7 @@ function get_plot_function(model)
                 Ni = length(only_rangesi)
                 input_cartprodi = cartesian_product(rangeboundi...; flat=Val{true})
                 new_sizei = tuple(fill(num_perdim, num_dimsi)...)
-                bc_valsi = reshape(bc_lfi(input_cartprodi, θ), new_sizei)
+                bc_valsi = reshape(bc_lfi(input_cartprodi, θ), new_sizei) .^ 2
                 image = if Ni == 1
                     plot(only_rangesi..., bc_valsi, title=name)
                 elseif Ni == 2
