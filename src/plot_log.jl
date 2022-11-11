@@ -121,7 +121,8 @@ function get_plot_function(model)
             # should the bc vals also use the interior range? this seems to sample the range at the boundary (and not the interior only)
 
 
-            pde_loss_plots = map(enumerate(pinnrep.loss_functions.datafree_pde_loss_functions)) do (i, pde_lfi)
+            pde_loss_plots = []
+            for (i, pde_lfi) in enumerate(pinnrep.loss_functions.datafree_pde_loss_functions)
                 name = "pde_loss_$(string(i))"
                 num_dimsi = length(pde_vars[i])
                 rangeboundi = map(pde_bounds[i]) do boundj
@@ -145,14 +146,25 @@ function get_plot_function(model)
                     println("no plot defined for arrays with more than 2 axes")
                     nothing
                 end
+                log_name = "pde_log_loss_$(string(i))"
+                pde_logvalsi = log.(pde_valsi)
+                log_image = if Ni == 1
+                    plot(only_rangesi..., pde_logvalsi, title=name)
+                elseif Ni == 2
+                    plot(reverse(only_rangesi)..., logpde_valsi, linetype=:contourf, title=name)
+                else
+                    println("no plot defined for arrays with more than 2 axes")
+                    nothing
+                end
 
                 # this is the bc_vals array we're looking for. this could be plotted 
                 # (using bc_vars as the axes name, the index as the title, 
-                #image = do_plot(loss_function, title=name)
-                (; name, image)
+                push!(pde_loss_plots, (; name, image))
+                push!(pde_loss_plots, (name=log_name, image=log_image))
             end
 
-            bc_loss_plots = map(enumerate(pinnrep.loss_functions.datafree_bc_loss_functions)) do (i, bc_lfi)
+            bc_loss_plots = []
+            for (i, bc_lfi) in enumerate(pinnrep.loss_functions.datafree_bc_loss_functions)
                 name = "bc_loss_$(string(i))"
                 num_dimsi = length(bc_vars[i])
                 rangeboundi = map(bcs_bounds[i]) do boundj
@@ -177,10 +189,21 @@ function get_plot_function(model)
                     nothing
                 end
 
+                log_name = "bc_log_loss_$(string(i))"
+                bc_logvalsi = log.(bc_valsi)
+                log_image = if Ni == 1
+                    plot(only_rangesi..., bc_logvalsi, title=name)
+                elseif Ni == 2
+                    plot(reverse(only_rangesi)..., bc_logvalsi, linetype=:contourf, title=name)
+                else
+                    println("no plot defined for arrays with more than 2 axes")
+                    nothing
+                end
+
                 # this is the bc_vals array we're looking for. this could be plotted 
                 # (using bc_vars as the axes name, the index as the title, 
-                #image = do_plot(loss_function, title=name)
-                (; name, image)
+                push!(bc_loss_plots, (; name, image))
+                push!(bc_loss_plots, (name=log_name, image=log_image))
             end
 
             if !(have_given_pybamm_plots[1])
