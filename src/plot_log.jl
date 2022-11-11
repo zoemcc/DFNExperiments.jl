@@ -151,7 +151,7 @@ function get_plot_function(model)
                 log_image = if Ni == 1
                     plot(only_rangesi..., pde_logvalsi, title=name)
                 elseif Ni == 2
-                    plot(reverse(only_rangesi)..., logpde_valsi, linetype=:contourf, title=name)
+                    plot(reverse(only_rangesi)..., pde_logvalsi, linetype=:contourf, title=name)
                 else
                     println("no plot defined for arrays with more than 2 axes")
                     nothing
