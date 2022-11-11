@@ -85,7 +85,7 @@ end
 
 
 function get_plot_function(model)
-    function get_plot_function_inner(logger, iteration, chains)
+    function get_plot_function_inner(logger, chains)
         eval_network_at_sim_data = get_eval_network_at_sim_data_func(model, chains)
         sim_data = read_sim_data(model)
         dvs = keys(sim_data[:dvs])
@@ -95,17 +95,99 @@ function get_plot_function(model)
         pybamm_plots = map(i -> (name="$(string(dvs[i]))_pybamm", image=do_plot(sim_data[:dvs][i], iv_data, dv_deps[i], "$(string(dvs[i]))_pybamm")), 1:num_dvs)
         have_given_pybamm_plots = [false]
 
-        function plot_function(θ, adaloss)
+        function plot_function(θ, pinnrep)
+            # error plots
             res = eval_network_at_sim_data(θ)
             eval_plots = map(i -> (name="$(string(dvs[i]))_nn", image=do_plot(res[:network_evals][i], iv_data, dv_deps[i], "$(string(dvs[i]))_nn")), 1:num_dvs)
             error_plots = map(i -> (name="$(string(dvs[i]))_error", image=do_plot(res[:errors][i], iv_data, dv_deps[i], "$(string(dvs[i]))_error")), 1:num_dvs)
             abs_error_plots = map(i -> (name="$(string(dvs[i]))_abs_error", image=do_plot(abs.(res[:errors][i]), iv_data, dv_deps[i], "$(string(dvs[i]))_abs_error")), 1:num_dvs)
 
+            # loss function plots
+            @unpack domains, eqs, bcs, dict_indvars, dict_depvars, flat_init_params = pinnrep
+            eltypeθ = eltype(pinnrep.flat_init_params)
+            bounds = get_bounds(domains, eqs, bcs, eltypeθ, dict_indvars, dict_depvars, StochasticTraining(64, 64))
+            pde_bounds, bcs_bounds = bounds
+            rangetype = typeof(range(eltypeθ(0.0), eltypeθ(1.0), length=100))
+            pde_vars = NeuralPDE.get_variables(eqs, dict_indvars, dict_depvars)
+            pde_args = NeuralPDE.get_argument(eqs, dict_indvars, dict_depvars)
+            bc_vars = NeuralPDE.get_variables(bcs, dict_indvars, dict_depvars)
+            bc_args = NeuralPDE.get_argument(bcs, dict_indvars, dict_depvars)
+
+            num_perdim = 101
+
+            # this is the bc_vals array we're looking for. this could be plotted 
+            # (using bc_vars as the axes name, the index as the title, 
+            # and the bc_vals as the error of the lf to be plotted (should be squared first))
+            # should the bc vals also use the interior range? this seems to sample the range at the boundary (and not the interior only)
+
+
+            pde_loss_plots = map(enumerate(pinnrep.loss_functions.datafree_pde_loss_functions)) do (i, pde_lfi)
+                name = "pde_loss_$(string(i))"
+                num_dimsi = length(pde_vars[i])
+                rangeboundi = map(pde_bounds[i]) do boundj
+                    if boundj isa Vector
+                        bound_eltype = eltypeθ.(boundj)
+                        range(start=bound_eltype[1], stop=bound_eltype[2], length=num_perdim)
+                    else
+                        eltypeθ(boundj)
+                    end
+                end
+                only_rangesi = filter(x -> x isa AbstractRange, rangeboundi)
+                Ni = length(only_rangesi)
+                input_cartprodi = cartesian_product(rangeboundi...; flat=Val{true})
+                new_sizei = tuple(fill(num_perdim, num_dimsi)...)
+                pde_valsi = reshape(pde_lfi(input_cartprodi, θ), new_sizei)
+                image = if Ni == 1
+                    plot(only_rangesi..., pde_valsi, title=name)
+                elseif Ni == 2
+                    plot(reverse(only_rangesi)..., pde_valsi, linetype=:contourf, title=name)
+                else
+                    println("no plot defined for arrays with more than 2 axes")
+                    nothing
+                end
+
+                # this is the bc_vals array we're looking for. this could be plotted 
+                # (using bc_vars as the axes name, the index as the title, 
+                #image = do_plot(loss_function, title=name)
+                (; name, image)
+            end
+
+            bc_loss_plots = map(enumerate(pinnrep.loss_functions.datafree_bc_loss_functions)) do (i, bc_lfi)
+                name = "bc_loss_$(string(i))"
+                num_dimsi = length(bc_vars[i])
+                rangeboundi = map(bcs_bounds[i]) do boundj
+                    if boundj isa Vector
+                        bound_eltype = eltypeθ.(boundj)
+                        range(start=bound_eltype[1], stop=bound_eltype[2], length=num_perdim)
+                    else
+                        eltypeθ(boundj)
+                    end
+                end
+                only_rangesi = filter(x -> x isa AbstractRange, rangeboundi)
+                Ni = length(only_rangesi)
+                input_cartprodi = cartesian_product(rangeboundi...; flat=Val{true})
+                new_sizei = tuple(fill(num_perdim, num_dimsi)...)
+                bc_valsi = reshape(bc_lfi(input_cartprodi, θ), new_sizei)
+                image = if Ni == 1
+                    plot(only_rangesi..., bc_valsi, title=name)
+                elseif Ni == 2
+                    plot(reverse(only_rangesi)..., bc_valsi, linetype=:contourf, title=name)
+                else
+                    println("no plot defined for arrays with more than 2 axes")
+                    nothing
+                end
+
+                # this is the bc_vals array we're looking for. this could be plotted 
+                # (using bc_vars as the axes name, the index as the title, 
+                #image = do_plot(loss_function, title=name)
+                (; name, image)
+            end
+
             if !(have_given_pybamm_plots[1])
                 have_given_pybamm_plots[1] = true
-                vcat(pybamm_plots, eval_plots, error_plots, abs_error_plots)
+                vcat(pybamm_plots, eval_plots, error_plots, abs_error_plots, pde_loss_plots, bc_loss_plots)
             else
-                vcat(eval_plots, error_plots, abs_error_plots)
+                vcat(eval_plots, error_plots, abs_error_plots, pde_loss_plots, bc_loss_plots)
             end
         end
         return plot_function
